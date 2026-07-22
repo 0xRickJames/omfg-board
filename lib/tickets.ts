@@ -1,4 +1,5 @@
 import "server-only";
+import { ObjectId } from "mongodb";
 import { getDb } from "@/lib/mongodb";
 import type { Ticket, Counter, TicketStatus, WorkType } from "@/lib/models";
 
@@ -77,4 +78,53 @@ export async function listTickets(
   const db = await getDb();
   const tickets = db.collection<Ticket>("tickets");
   return tickets.find(filter).sort({ order: 1 }).toArray();
+}
+
+export interface MoveTicketInput {
+  status: TicketStatus;
+  /** Omit to append the ticket to the end of its new column. */
+  order?: number;
+}
+
+/**
+ * The single place a ticket's status/order changes. Later phases (Discord
+ * publish, GitHub auto-move) hook their side effects in here.
+ */
+export async function moveTicket(
+  id: string,
+  { status, order }: MoveTicketInput,
+): Promise<Ticket | null> {
+  if (!ObjectId.isValid(id)) return null;
+  const db = await getDb();
+  const tickets = db.collection<Ticket>("tickets");
+  return tickets.findOneAndUpdate(
+    { _id: new ObjectId(id) },
+    { $set: { status, order: order ?? Date.now(), updatedAt: new Date() } },
+    { returnDocument: "after" },
+  );
+}
+
+export async function deleteTicket(id: string): Promise<boolean> {
+  if (!ObjectId.isValid(id)) return false;
+  const db = await getDb();
+  const tickets = db.collection<Ticket>("tickets");
+  const result = await tickets.deleteOne({ _id: new ObjectId(id) });
+  return result.deletedCount === 1;
+}
+
+// Plain-JSON shape for passing tickets from Server to Client Components
+// (ObjectId isn't a serializable RSC prop type).
+export type TicketDTO = Omit<Ticket, "_id" | "createdAt" | "updatedAt"> & {
+  _id: string;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export function toTicketDTO(t: Ticket): TicketDTO {
+  return {
+    ...t,
+    _id: t._id!.toString(),
+    createdAt: t.createdAt.toISOString(),
+    updatedAt: t.updatedAt.toISOString(),
+  };
 }
