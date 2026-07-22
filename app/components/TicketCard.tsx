@@ -3,14 +3,21 @@ import type { TicketDTO } from "@/lib/tickets";
 export default function TicketCard({
   ticket,
   onDelete,
+  onOpen,
   actions,
 }: {
   ticket: TicketDTO;
   onDelete: () => void;
+  onOpen?: () => void;
   actions?: React.ReactNode;
 }) {
   return (
-    <div className="flex flex-col gap-2 rounded border border-zinc-200 bg-white p-3 text-sm shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
+    <div
+      onClick={onOpen}
+      className={`flex flex-col gap-2 rounded border border-zinc-200 bg-white p-3 text-sm shadow-sm dark:border-zinc-800 dark:bg-zinc-900 ${
+        onOpen ? "cursor-pointer" : ""
+      }`}
+    >
       <div className="flex items-start justify-between gap-2">
         <span className="font-mono text-xs text-zinc-500">{ticket.key}</span>
         <button

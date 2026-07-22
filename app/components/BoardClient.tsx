@@ -22,6 +22,7 @@ import type { TicketDTO } from "@/lib/tickets";
 import type { WorkType } from "@/lib/models";
 import TicketCard from "@/app/components/TicketCard";
 import WorkTypeFilter from "@/app/components/WorkTypeFilter";
+import TicketModal from "@/app/components/TicketModal";
 
 type BoardStatus = "todo" | "in_progress" | "testing" | "done";
 
@@ -45,9 +46,11 @@ function computeOrder(prevOrder?: number, nextOrder?: number): number {
 function SortableTicketCard({
   ticket,
   onDelete,
+  onOpen,
 }: {
   ticket: TicketDTO;
   onDelete: (id: string) => void;
+  onOpen: (ticket: TicketDTO) => void;
 }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } =
     useSortable({ id: ticket._id });
@@ -60,7 +63,11 @@ function SortableTicketCard({
 
   return (
     <div ref={setNodeRef} style={style} {...attributes} {...listeners}>
-      <TicketCard ticket={ticket} onDelete={() => onDelete(ticket._id)} />
+      <TicketCard
+        ticket={ticket}
+        onDelete={() => onDelete(ticket._id)}
+        onOpen={() => onOpen(ticket)}
+      />
     </div>
   );
 }
@@ -69,10 +76,12 @@ function Column({
   status,
   tickets,
   onDelete,
+  onOpen,
 }: {
   status: BoardStatus;
   tickets: TicketDTO[];
   onDelete: (id: string) => void;
+  onOpen: (ticket: TicketDTO) => void;
 }) {
   const { setNodeRef } = useDroppable({ id: status });
 
@@ -87,7 +96,12 @@ function Column({
           strategy={verticalListSortingStrategy}
         >
           {tickets.map((ticket) => (
-            <SortableTicketCard key={ticket._id} ticket={ticket} onDelete={onDelete} />
+            <SortableTicketCard
+              key={ticket._id}
+              ticket={ticket}
+              onDelete={onDelete}
+              onOpen={onOpen}
+            />
           ))}
         </SortableContext>
       </div>
@@ -97,8 +111,10 @@ function Column({
 
 export default function BoardClient({
   initialTickets,
+  currentUserDiscordId,
 }: {
   initialTickets: TicketDTO[];
+  currentUserDiscordId: string;
 }) {
   const [columns, setColumns] = useState<Record<BoardStatus, TicketDTO[]>>(() => {
     const grouped: Record<BoardStatus, TicketDTO[]> = {
@@ -116,6 +132,7 @@ export default function BoardClient({
   });
   const [workType, setWorkType] = useState<WorkType | "all">("all");
   const [activeId, setActiveId] = useState<string | null>(null);
+  const [editingTicket, setEditingTicket] = useState<TicketDTO | null>(null);
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
@@ -202,6 +219,17 @@ export default function BoardClient({
     fetch(`/api/tickets/${id}`, { method: "DELETE" });
   }
 
+  function handleSaved(saved: TicketDTO) {
+    setColumns((prev) => {
+      const next = {} as Record<BoardStatus, TicketDTO[]>;
+      for (const status of COLUMN_ORDER) {
+        next[status] = prev[status].map((t) => (t._id === saved._id ? saved : t));
+      }
+      return next;
+    });
+    setEditingTicket(null);
+  }
+
   return (
     <div className="flex flex-1 flex-col gap-4 px-6 py-6">
       <WorkTypeFilter value={workType} onChange={setWorkType} />
@@ -218,6 +246,7 @@ export default function BoardClient({
               status={status}
               tickets={filteredColumns[status]}
               onDelete={handleDelete}
+              onOpen={setEditingTicket}
             />
           ))}
         </div>
@@ -227,6 +256,14 @@ export default function BoardClient({
           ) : null}
         </DragOverlay>
       </DndContext>
+      {editingTicket && (
+        <TicketModal
+          ticket={editingTicket}
+          currentUserDiscordId={currentUserDiscordId}
+          onClose={() => setEditingTicket(null)}
+          onSaved={handleSaved}
+        />
+      )}
     </div>
   );
 }

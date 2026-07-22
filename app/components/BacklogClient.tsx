@@ -5,15 +5,20 @@ import type { TicketDTO } from "@/lib/tickets";
 import type { WorkType } from "@/lib/models";
 import TicketCard from "@/app/components/TicketCard";
 import WorkTypeFilter from "@/app/components/WorkTypeFilter";
+import TicketModal from "@/app/components/TicketModal";
 
 export default function BacklogClient({
   initialTickets,
+  currentUserDiscordId,
 }: {
   initialTickets: TicketDTO[];
+  currentUserDiscordId: string;
 }) {
   const [tickets, setTickets] = useState<TicketDTO[]>(initialTickets);
   const [prevInitialTickets, setPrevInitialTickets] = useState(initialTickets);
   const [workType, setWorkType] = useState<WorkType | "all">("all");
+  const [editingTicket, setEditingTicket] = useState<TicketDTO | null>(null);
+  const [modalOpen, setModalOpen] = useState(false);
 
   // initialTickets comes from a fresh server fetch on every router.refresh()
   // (e.g. after creating a ticket) — resync local state when it changes.
@@ -42,18 +47,49 @@ export default function BacklogClient({
     });
   }
 
+  function openCreate() {
+    setEditingTicket(null);
+    setModalOpen(true);
+  }
+
+  function openEdit(ticket: TicketDTO) {
+    setEditingTicket(ticket);
+    setModalOpen(true);
+  }
+
+  function handleSaved(saved: TicketDTO) {
+    setTickets((prev) => {
+      const exists = prev.some((t) => t._id === saved._id);
+      if (!exists) return [...prev, saved];
+      return prev.map((t) => (t._id === saved._id ? saved : t));
+    });
+    setModalOpen(false);
+  }
+
   return (
     <div className="flex flex-col gap-3">
-      <WorkTypeFilter value={workType} onChange={setWorkType} />
+      <div className="flex items-center justify-between">
+        <WorkTypeFilter value={workType} onChange={setWorkType} />
+        <button
+          onClick={openCreate}
+          className="rounded bg-zinc-900 px-3 py-1.5 text-sm font-medium text-white dark:bg-zinc-50 dark:text-zinc-900"
+        >
+          + New ticket
+        </button>
+      </div>
       <ul className="flex flex-col gap-2">
         {visible.map((ticket) => (
           <li key={ticket._id}>
             <TicketCard
               ticket={ticket}
               onDelete={() => handleDelete(ticket._id)}
+              onOpen={() => openEdit(ticket)}
               actions={
                 <button
-                  onClick={() => handleMoveToBoard(ticket._id)}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleMoveToBoard(ticket._id);
+                  }}
                   className="self-start rounded bg-zinc-900 px-3 py-1 text-xs font-medium text-white dark:bg-zinc-50 dark:text-zinc-900"
                 >
                   Move to board
@@ -66,6 +102,14 @@ export default function BacklogClient({
           <p className="text-sm text-zinc-500">Nothing in the backlog.</p>
         )}
       </ul>
+      {modalOpen && (
+        <TicketModal
+          ticket={editingTicket}
+          currentUserDiscordId={currentUserDiscordId}
+          onClose={() => setModalOpen(false)}
+          onSaved={handleSaved}
+        />
+      )}
     </div>
   );
 }

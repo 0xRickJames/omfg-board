@@ -104,6 +104,57 @@ export async function moveTicket(
   );
 }
 
+export interface UpdateTicketInput {
+  title?: string;
+  description?: string;
+  workType?: WorkType;
+  taskType?: Ticket["taskType"];
+  priority?: Ticket["priority"];
+  labels?: string[];
+  owners?: string[];
+  dueDate?: string | null;
+  links?: Ticket["links"];
+  related?: string[];
+  isPublic?: boolean;
+}
+
+/** Whitelists edit-modal fields out of a raw request body (status/order/key/etc. are not editable here). */
+export function pickUpdateFields(body: Record<string, unknown>): UpdateTicketInput {
+  const updates: UpdateTicketInput = {};
+  if (typeof body.title === "string") updates.title = body.title;
+  if (typeof body.description === "string") updates.description = body.description;
+  if (typeof body.workType === "string") updates.workType = body.workType as WorkType;
+  if (typeof body.taskType === "string") {
+    updates.taskType = body.taskType as Ticket["taskType"];
+  }
+  if (typeof body.priority === "string") {
+    updates.priority = body.priority as Ticket["priority"];
+  }
+  if (Array.isArray(body.labels)) updates.labels = body.labels as string[];
+  if (Array.isArray(body.owners)) updates.owners = body.owners as string[];
+  if (body.dueDate === null || typeof body.dueDate === "string") {
+    updates.dueDate = body.dueDate;
+  }
+  if (Array.isArray(body.links)) updates.links = body.links as Ticket["links"];
+  if (Array.isArray(body.related)) updates.related = body.related as string[];
+  if (typeof body.isPublic === "boolean") updates.isPublic = body.isPublic;
+  return updates;
+}
+
+export async function updateTicket(
+  id: string,
+  input: UpdateTicketInput,
+): Promise<Ticket | null> {
+  if (!ObjectId.isValid(id)) return null;
+  const db = await getDb();
+  const tickets = db.collection<Ticket>("tickets");
+  return tickets.findOneAndUpdate(
+    { _id: new ObjectId(id) },
+    { $set: { ...input, updatedAt: new Date() } },
+    { returnDocument: "after" },
+  );
+}
+
 export async function deleteTicket(id: string): Promise<boolean> {
   if (!ObjectId.isValid(id)) return false;
   const db = await getDb();

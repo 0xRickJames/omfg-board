@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/auth";
-import { moveTicket, deleteTicket } from "@/lib/tickets";
-import type { TicketStatus } from "@/lib/models";
+import { moveTicket, updateTicket, pickUpdateFields, deleteTicket } from "@/lib/tickets";
+import type { TicketStatus, WorkType, TaskType, Priority } from "@/lib/models";
 
 const VALID_STATUSES: TicketStatus[] = [
   "backlog",
@@ -10,6 +10,16 @@ const VALID_STATUSES: TicketStatus[] = [
   "testing",
   "done",
 ];
+const VALID_WORK_TYPES: WorkType[] = [
+  "BD",
+  "Marketing",
+  "Design",
+  "Frontend",
+  "Backend",
+  "Research",
+];
+const VALID_TASK_TYPES: TaskType[] = ["Idea", "Task", "Bug"];
+const VALID_PRIORITIES: Priority[] = ["none", "low", "med", "high", "urgent"];
 
 export async function PATCH(
   req: NextRequest,
@@ -23,14 +33,36 @@ export async function PATCH(
   const { id } = await params;
   const body = await req.json();
 
-  if (!VALID_STATUSES.includes(body.status)) {
-    return NextResponse.json({ error: "invalid status" }, { status: 400 });
-  }
-  if (body.order !== undefined && typeof body.order !== "number") {
-    return NextResponse.json({ error: "order must be a number" }, { status: 400 });
+  // Drag-and-drop moves send {status, order}; the edit modal sends the rest.
+  if (typeof body.status === "string") {
+    if (!VALID_STATUSES.includes(body.status)) {
+      return NextResponse.json({ error: "invalid status" }, { status: 400 });
+    }
+    if (body.order !== undefined && typeof body.order !== "number") {
+      return NextResponse.json({ error: "order must be a number" }, { status: 400 });
+    }
+    const ticket = await moveTicket(id, { status: body.status, order: body.order });
+    if (!ticket) {
+      return NextResponse.json({ error: "not found" }, { status: 404 });
+    }
+    return NextResponse.json(ticket);
   }
 
-  const ticket = await moveTicket(id, { status: body.status, order: body.order });
+  const updates = pickUpdateFields(body);
+  if (updates.workType && !VALID_WORK_TYPES.includes(updates.workType)) {
+    return NextResponse.json({ error: "invalid workType" }, { status: 400 });
+  }
+  if (updates.taskType && !VALID_TASK_TYPES.includes(updates.taskType)) {
+    return NextResponse.json({ error: "invalid taskType" }, { status: 400 });
+  }
+  if (updates.priority && !VALID_PRIORITIES.includes(updates.priority)) {
+    return NextResponse.json({ error: "invalid priority" }, { status: 400 });
+  }
+  if (Object.keys(updates).length === 0) {
+    return NextResponse.json({ error: "no valid fields to update" }, { status: 400 });
+  }
+
+  const ticket = await updateTicket(id, updates);
   if (!ticket) {
     return NextResponse.json({ error: "not found" }, { status: 404 });
   }
