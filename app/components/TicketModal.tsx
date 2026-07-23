@@ -1,9 +1,11 @@
 "use client";
 
 import { useState } from "react";
-import type { TicketDTO } from "@/lib/tickets";
+import type { TicketDTO, CommentDTO } from "@/lib/tickets";
 import type { WorkType, TaskType, Priority, TicketStatus, TicketLink } from "@/lib/models";
 import type { TeamMember } from "@/lib/team";
+import { timeAgo } from "@/lib/format";
+import MemberAvatar from "@/app/components/MemberAvatar";
 
 const WORK_TYPES: WorkType[] = [
   "BD",
@@ -31,17 +33,6 @@ function parseList(text: string): string[] {
     .split(",")
     .map((s) => s.trim())
     .filter(Boolean);
-}
-
-function MemberAvatar({ member }: { member: TeamMember }) {
-  return member.avatar ? (
-    // eslint-disable-next-line @next/next/no-img-element
-    <img src={member.avatar} alt="" className="h-5 w-5 rounded-full" />
-  ) : (
-    <span className="flex h-5 w-5 items-center justify-center rounded-full bg-zinc-400 text-[10px] text-white">
-      {member.name[0]}
-    </span>
-  );
 }
 
 export default function TicketModal({
@@ -72,6 +63,10 @@ export default function TicketModal({
   const [isPublic, setIsPublic] = useState(ticket?.isPublic ?? false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const [comments, setComments] = useState<CommentDTO[]>(ticket?.comments ?? []);
+  const [commentText, setCommentText] = useState("");
+  const [postingComment, setPostingComment] = useState(false);
 
   function updateLink(index: number, field: keyof TicketLink, value: string) {
     setLinks((prev) =>
@@ -131,6 +126,22 @@ export default function TicketModal({
 
     const saved: TicketDTO = await res.json();
     onSaved(saved);
+  }
+
+  async function handlePostComment() {
+    if (!ticket || !commentText.trim()) return;
+    setPostingComment(true);
+    const res = await fetch(`/api/tickets/${ticket._id}/comments`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ text: commentText.trim() }),
+    });
+    setPostingComment(false);
+    if (res.ok) {
+      const updated: TicketDTO = await res.json();
+      setComments(updated.comments);
+      setCommentText("");
+    }
   }
 
   return (
@@ -389,6 +400,57 @@ export default function TicketModal({
             </button>
           </div>
         </form>
+
+        {mode === "edit" && (
+          <div className="flex flex-col gap-2 border-t border-zinc-200 pt-4 dark:border-zinc-800">
+            <label className="text-xs font-medium text-zinc-500">Comments</label>
+            <div className="flex max-h-48 flex-col gap-3 overflow-y-auto">
+              {comments.length === 0 && (
+                <p className="text-xs text-zinc-500">No comments yet.</p>
+              )}
+              {comments.map((comment) => {
+                const author = team.find((m) => m.discordId === comment.authorId);
+                return (
+                  <div key={comment.id} className="flex items-start gap-2 text-sm">
+                    {author ? (
+                      <MemberAvatar member={author} />
+                    ) : (
+                      <span className="h-5 w-5 shrink-0 rounded-full bg-zinc-400" />
+                    )}
+                    <div className="min-w-0">
+                      <div className="text-xs text-zinc-500">
+                        {author?.name ?? "Unknown"} · {timeAgo(comment.createdAt)}
+                      </div>
+                      <p className="whitespace-pre-wrap break-words">{comment.text}</p>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+            <div className="flex gap-2">
+              <input
+                value={commentText}
+                onChange={(e) => setCommentText(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    e.preventDefault();
+                    handlePostComment();
+                  }
+                }}
+                placeholder="Add a comment…"
+                className="flex-1 rounded border border-zinc-300 px-3 py-1.5 text-sm dark:border-zinc-700 dark:bg-zinc-800"
+              />
+              <button
+                type="button"
+                onClick={handlePostComment}
+                disabled={postingComment || !commentText.trim()}
+                className="rounded bg-zinc-900 px-3 py-1.5 text-sm font-medium text-white disabled:opacity-50 dark:bg-zinc-50 dark:text-zinc-900"
+              >
+                Post
+              </button>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

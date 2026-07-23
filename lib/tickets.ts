@@ -1,7 +1,8 @@
 import "server-only";
 import { ObjectId } from "mongodb";
+import { randomUUID } from "node:crypto";
 import { getDb } from "@/lib/mongodb";
-import type { Ticket, Counter, TicketStatus, WorkType, GithubRef } from "@/lib/models";
+import type { Ticket, Counter, TicketStatus, WorkType, GithubRef, Comment } from "@/lib/models";
 import { notifyDiscordStatusChange } from "@/lib/discord";
 
 const KEY_PREFIX = "OMFG";
@@ -58,6 +59,7 @@ export async function createTicket(
     related: input.related ?? [],
     isPublic: input.isPublic ?? false,
     githubRef: null,
+    comments: [],
     order: Date.now(),
     createdAt: now,
     updatedAt: now,
@@ -151,6 +153,22 @@ export async function setGithubRef(
   );
 }
 
+export async function addComment(
+  id: string,
+  authorId: string,
+  text: string,
+): Promise<Ticket | null> {
+  if (!ObjectId.isValid(id)) return null;
+  const db = await getDb();
+  const tickets = db.collection<Ticket>("tickets");
+  const comment: Comment = { id: randomUUID(), authorId, text, createdAt: new Date() };
+  return tickets.findOneAndUpdate(
+    { _id: new ObjectId(id) },
+    { $push: { comments: comment }, $set: { updatedAt: new Date() } },
+    { returnDocument: "after" },
+  );
+}
+
 export interface UpdateTicketInput {
   title?: string;
   description?: string;
@@ -210,12 +228,15 @@ export async function deleteTicket(id: string): Promise<boolean> {
   return result.deletedCount === 1;
 }
 
+export type CommentDTO = Omit<Comment, "createdAt"> & { createdAt: string };
+
 // Plain-JSON shape for passing tickets from Server to Client Components
 // (ObjectId isn't a serializable RSC prop type).
-export type TicketDTO = Omit<Ticket, "_id" | "createdAt" | "updatedAt"> & {
+export type TicketDTO = Omit<Ticket, "_id" | "createdAt" | "updatedAt" | "comments"> & {
   _id: string;
   createdAt: string;
   updatedAt: string;
+  comments: CommentDTO[];
 };
 
 export function toTicketDTO(t: Ticket): TicketDTO {
@@ -224,5 +245,7 @@ export function toTicketDTO(t: Ticket): TicketDTO {
     _id: t._id!.toString(),
     createdAt: t.createdAt.toISOString(),
     updatedAt: t.updatedAt.toISOString(),
+    // Tickets seeded before comments existed won't have the field at all.
+    comments: (t.comments ?? []).map((c) => ({ ...c, createdAt: c.createdAt.toISOString() })),
   };
 }

@@ -1,18 +1,25 @@
 import type { TicketDTO } from "@/lib/tickets";
+import type { TeamMember } from "@/lib/team";
 import { timeAgo, dueInfo } from "@/lib/format";
+import MemberAvatar from "@/app/components/MemberAvatar";
 
 export default function TicketCard({
   ticket,
+  team,
   onDelete,
   onOpen,
   actions,
 }: {
   ticket: TicketDTO;
+  team: TeamMember[];
   onDelete: () => void;
   onOpen?: () => void;
   actions?: React.ReactNode;
 }) {
   const due = dueInfo(ticket.dueDate);
+  const owners = ticket.owners
+    .map((id) => team.find((m) => m.discordId === id))
+    .filter((m): m is TeamMember => Boolean(m));
 
   return (
     <div
@@ -22,7 +29,20 @@ export default function TicketCard({
       }`}
     >
       <div className="flex items-start justify-between gap-2">
-        <span className="font-mono text-xs text-zinc-500">{ticket.key}</span>
+        <div className="flex items-center gap-1.5">
+          <span className="font-mono text-xs text-zinc-500">{ticket.key}</span>
+          {owners.length > 0 && (
+            <div className="flex -space-x-1.5">
+              {owners.map((member) => (
+                <MemberAvatar
+                  key={member.discordId}
+                  member={member}
+                  className="h-5 w-5 ring-2 ring-white dark:ring-zinc-900"
+                />
+              ))}
+            </div>
+          )}
+        </div>
         <button
           onClick={(e) => {
             e.stopPropagation();

@@ -125,7 +125,14 @@ just needs its own webhook pointed at this same URL with the same secret.
 `proxy.ts`'s matcher excludes `api/webhooks/*` since these requests carry
 no session, only their own signature.
 
-### Phase 7 — Jira migration (one-time script, run last)
+### Phase 7 — Jira migration (DONE, informally)
+The real board data was migrated directly — Rick exported the active Jira
+tickets and they were seeded straight into MongoDB (normalizing a few values
+that didn't match this schema: `priority: medium`→`med`, `status: doing`→
+`in_progress`, `taskType: Sub-task`→`Task`, and converting embedded
+`<custom data-type="smartlink">` HTML into plain markdown links). The formal
+reviewed script below was never built — not needed since the one-time import
+already happened. Left here in case a future re-import is ever needed.
 
 A standalone TypeScript script that pulls the old Jira (OMFG) board and
 transforms it into `tickets` docs. NOT part of the web app — it's a
@@ -179,6 +186,27 @@ NOT silently guess and commit):**
 Do NOT run this until Phases 1–3 exist and the schema is stable.
 
 ---
+
+---
+
+## Post-launch improvements (beyond the original 7 phases)
+
+- **Delete everywhere**: every ticket surface (Board, Backlog, Planning rows,
+  List) has its own Delete button, not just Idea rows.
+- **Owner avatars**: `TicketCard`, Planning rows, and the List view all show
+  stacked `MemberAvatar`s (`app/components/MemberAvatar.tsx`, shared) for a
+  ticket's `owners`, pulled from `lib/team.ts`'s roster + live avatars.
+- **`/list`**: a flat, sortable/filterable table of every ticket (not scoped
+  by status like Board/Backlog/Planning are). Click a column header to sort
+  (`key` sorts numerically, `priority`/`status` sort by pipeline rank, not
+  alphabetically); click a row to open the edit modal. Open to any signed-in
+  user, not founder-restricted.
+- **Comments**: `tickets.comments: Comment[]` (`{id, authorId, text,
+  createdAt}`), appended via `POST /api/tickets/[id]/comments`
+  (`lib/tickets.ts`'s `addComment()`). Only rendered inside the ticket modal
+  (edit mode only — a ticket needs an `_id` to attach comments to), each
+  showing the author's avatar/name and `timeAgo`. Comments post immediately
+  on their own request — they don't wait for the modal's main Save.
 
 ## Env vars
 - `MONGODB_URI`

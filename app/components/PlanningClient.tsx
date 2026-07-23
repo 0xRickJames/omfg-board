@@ -13,6 +13,7 @@ import {
 } from "@/lib/ticketFilters";
 import TicketFilters from "@/app/components/TicketFilters";
 import TicketModal from "@/app/components/TicketModal";
+import MemberAvatar from "@/app/components/MemberAvatar";
 
 function patchTicket(id: string, body: Record<string, unknown>) {
   fetch(`/api/tickets/${id}`, {
@@ -92,11 +93,17 @@ export default function PlanningClient({
     patchTicket(id, { taskType: "Task" });
   }
 
-  function kill(id: string, key: string, list: "backlog" | "board") {
+  function handleDelete(id: string, key: string, list: "backlog" | "board") {
     if (!confirm(`Delete ${key}? This can't be undone.`)) return;
     const setList = list === "backlog" ? setBacklogTickets : setBoardTickets;
     setList((prev) => prev.filter((t) => t._id !== id));
     fetch(`/api/tickets/${id}`, { method: "DELETE" });
+  }
+
+  function ownersOf(ticket: TicketDTO) {
+    return ticket.owners
+      .map((id) => team.find((m) => m.discordId === id))
+      .filter((m): m is TeamMember => Boolean(m));
   }
 
   function handleSaved(saved: TicketDTO) {
@@ -140,6 +147,7 @@ export default function PlanningClient({
           )}
           {visibleBacklog.map((ticket) => {
             const due = dueInfo(ticket.dueDate);
+            const owners = ownersOf(ticket);
             return (
               <div
                 key={ticket._id}
@@ -148,6 +156,17 @@ export default function PlanningClient({
               >
                 <div className="flex items-center gap-2">
                   <span className="font-mono text-xs text-zinc-500">{ticket.key}</span>
+                  {owners.length > 0 && (
+                    <div className="flex -space-x-1.5">
+                      {owners.map((member) => (
+                        <MemberAvatar
+                          key={member.discordId}
+                          member={member}
+                          className="h-5 w-5 ring-2 ring-white dark:ring-zinc-900"
+                        />
+                      ))}
+                    </div>
+                  )}
                   <span className="flex-1 truncate">{ticket.title}</span>
                   <span className="shrink-0 text-xs text-zinc-400">
                     {timeAgo(ticket.createdAt)}
@@ -184,21 +203,19 @@ export default function PlanningClient({
                     Public
                   </label>
                   {ticket.taskType === "Idea" && (
-                    <>
-                      <button
-                        onClick={() => promoteToTask(ticket._id, "backlog")}
-                        className="rounded bg-zinc-100 px-2 py-1 text-xs font-medium dark:bg-zinc-800"
-                      >
-                        Promote to Task
-                      </button>
-                      <button
-                        onClick={() => kill(ticket._id, ticket.key, "backlog")}
-                        className="rounded bg-red-50 px-2 py-1 text-xs font-medium text-red-700 dark:bg-red-950 dark:text-red-300"
-                      >
-                        Kill
-                      </button>
-                    </>
+                    <button
+                      onClick={() => promoteToTask(ticket._id, "backlog")}
+                      className="rounded bg-zinc-100 px-2 py-1 text-xs font-medium dark:bg-zinc-800"
+                    >
+                      Promote to Task
+                    </button>
                   )}
+                  <button
+                    onClick={() => handleDelete(ticket._id, ticket.key, "backlog")}
+                    className="rounded bg-red-50 px-2 py-1 text-xs font-medium text-red-700 dark:bg-red-950 dark:text-red-300"
+                  >
+                    Delete
+                  </button>
                 </div>
               </div>
             );
@@ -214,6 +231,7 @@ export default function PlanningClient({
           )}
           {visibleBoard.map((ticket) => {
             const due = dueInfo(ticket.dueDate);
+            const owners = ownersOf(ticket);
             return (
               <div
                 key={ticket._id}
@@ -222,6 +240,17 @@ export default function PlanningClient({
               >
                 <div className="flex items-center gap-2">
                   <span className="font-mono text-xs text-zinc-500">{ticket.key}</span>
+                  {owners.length > 0 && (
+                    <div className="flex -space-x-1.5">
+                      {owners.map((member) => (
+                        <MemberAvatar
+                          key={member.discordId}
+                          member={member}
+                          className="h-5 w-5 ring-2 ring-white dark:ring-zinc-900"
+                        />
+                      ))}
+                    </div>
+                  )}
                   <span className="flex-1 truncate">{ticket.title}</span>
                   <span className="shrink-0 text-xs text-zinc-400">
                     {timeAgo(ticket.createdAt)}
@@ -264,21 +293,19 @@ export default function PlanningClient({
                     Public
                   </label>
                   {ticket.taskType === "Idea" && (
-                    <>
-                      <button
-                        onClick={() => promoteToTask(ticket._id, "board")}
-                        className="rounded bg-zinc-100 px-2 py-1 text-xs font-medium dark:bg-zinc-800"
-                      >
-                        Promote to Task
-                      </button>
-                      <button
-                        onClick={() => kill(ticket._id, ticket.key, "board")}
-                        className="rounded bg-red-50 px-2 py-1 text-xs font-medium text-red-700 dark:bg-red-950 dark:text-red-300"
-                      >
-                        Kill
-                      </button>
-                    </>
+                    <button
+                      onClick={() => promoteToTask(ticket._id, "board")}
+                      className="rounded bg-zinc-100 px-2 py-1 text-xs font-medium dark:bg-zinc-800"
+                    >
+                      Promote to Task
+                    </button>
                   )}
+                  <button
+                    onClick={() => handleDelete(ticket._id, ticket.key, "board")}
+                    className="rounded bg-red-50 px-2 py-1 text-xs font-medium text-red-700 dark:bg-red-950 dark:text-red-300"
+                  >
+                    Delete
+                  </button>
                 </div>
               </div>
             );

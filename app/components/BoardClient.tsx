@@ -52,10 +52,12 @@ function computeOrder(prevOrder?: number, nextOrder?: number): number {
 
 function SortableTicketCard({
   ticket,
+  team,
   onDelete,
   onOpen,
 }: {
   ticket: TicketDTO;
+  team: TeamMember[];
   onDelete: (id: string) => void;
   onOpen: (ticket: TicketDTO) => void;
 }) {
@@ -72,6 +74,7 @@ function SortableTicketCard({
     <div ref={setNodeRef} style={style} {...attributes} {...listeners}>
       <TicketCard
         ticket={ticket}
+        team={team}
         onDelete={() => onDelete(ticket._id)}
         onOpen={() => onOpen(ticket)}
       />
@@ -82,11 +85,13 @@ function SortableTicketCard({
 function Column({
   status,
   tickets,
+  team,
   onDelete,
   onOpen,
 }: {
   status: BoardStatus;
   tickets: TicketDTO[];
+  team: TeamMember[];
   onDelete: (id: string) => void;
   onOpen: (ticket: TicketDTO) => void;
 }) {
@@ -106,6 +111,7 @@ function Column({
             <SortableTicketCard
               key={ticket._id}
               ticket={ticket}
+              team={team}
               onDelete={onDelete}
               onOpen={onOpen}
             />
@@ -268,6 +274,7 @@ export default function BoardClient({
               key={status}
               status={status}
               tickets={filteredColumns[status]}
+              team={team}
               onDelete={handleDelete}
               onOpen={setEditingTicket}
             />
@@ -275,7 +282,7 @@ export default function BoardClient({
         </div>
         <DragOverlay>
           {activeTicket ? (
-            <TicketCard ticket={activeTicket} onDelete={() => {}} />
+            <TicketCard ticket={activeTicket} team={team} onDelete={() => {}} />
           ) : null}
         </DragOverlay>
       </DndContext>

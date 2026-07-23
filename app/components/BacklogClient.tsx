@@ -95,6 +95,7 @@ export default function BacklogClient({
           <li key={ticket._id}>
             <TicketCard
               ticket={ticket}
+              team={team}
               onDelete={() => handleDelete(ticket._id)}
               onOpen={() => openEdit(ticket)}
               actions={

@@ -42,6 +42,13 @@ export interface GithubRef {
   branch: string;
 }
 
+export interface Comment {
+  id: string;
+  authorId: string;
+  text: string;
+  createdAt: Date;
+}
+
 export interface Ticket {
   _id?: ObjectId;
   key: string;
@@ -58,6 +65,7 @@ export interface Ticket {
   related: string[];
   isPublic: boolean;
   githubRef: GithubRef | null;
+  comments: Comment[];
   order: number;
   createdAt: Date;
   updatedAt: Date;
