@@ -200,9 +200,12 @@ export default function ListClient({
                       ))}
                     </div>
                   </td>
-                  <td className="px-3 py-2" onClick={(e) => e.stopPropagation()}>
+                  <td className="px-3 py-2">
                     <button
-                      onClick={() => handleDelete(ticket._id, ticket.key)}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleDelete(ticket._id, ticket.key);
+                      }}
                       className="text-xs text-zinc-400 hover:text-red-600"
                     >
                       Delete

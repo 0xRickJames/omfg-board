@@ -224,14 +224,20 @@ export default function PlanningClient({
                     {ticket.description}
                   </p>
                 )}
-                <div className="flex flex-wrap items-center gap-3" onClick={(e) => e.stopPropagation()}>
+                <div className="flex flex-wrap items-center gap-3">
                   <button
-                    onClick={() => moveToBoard(ticket._id)}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      moveToBoard(ticket._id);
+                    }}
                     className="rounded bg-zinc-900 px-2 py-1 text-xs font-medium text-white dark:bg-zinc-50 dark:text-zinc-900"
                   >
                     Add to board
                   </button>
-                  <label className="flex items-center gap-1.5 text-xs">
+                  <label
+                    className="flex items-center gap-1.5 text-xs"
+                    onClick={(e) => e.stopPropagation()}
+                  >
                     <input
                       type="checkbox"
                       checked={false}
@@ -239,7 +245,10 @@ export default function PlanningClient({
                     />
                     Blocked
                   </label>
-                  <label className="flex items-center gap-1.5 text-xs">
+                  <label
+                    className="flex items-center gap-1.5 text-xs"
+                    onClick={(e) => e.stopPropagation()}
+                  >
                     <input
                       type="checkbox"
                       checked={ticket.isPublic}
@@ -249,14 +258,20 @@ export default function PlanningClient({
                   </label>
                   {ticket.taskType === "Idea" && (
                     <button
-                      onClick={() => promoteToTask(ticket._id, "backlog")}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        promoteToTask(ticket._id, "backlog");
+                      }}
                       className="rounded bg-zinc-100 px-2 py-1 text-xs font-medium dark:bg-zinc-800"
                     >
                       Promote to Task
                     </button>
                   )}
                   <button
-                    onClick={() => handleDelete(ticket._id, ticket.key, "backlog")}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleDelete(ticket._id, ticket.key, "backlog");
+                    }}
                     className="rounded bg-red-50 px-2 py-1 text-xs font-medium text-red-700 dark:bg-red-950 dark:text-red-300"
                   >
                     Delete
@@ -328,17 +343,20 @@ export default function PlanningClient({
                     {ticket.description}
                   </p>
                 )}
-                <div
-                  className="flex flex-wrap items-center gap-3"
-                  onClick={(e) => e.stopPropagation()}
-                >
+                <div className="flex flex-wrap items-center gap-3">
                   <button
-                    onClick={() => moveToBacklog(ticket._id)}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      moveToBacklog(ticket._id);
+                    }}
                     className="rounded bg-zinc-100 px-2 py-1 text-xs font-medium dark:bg-zinc-800"
                   >
                     Move to backlog
                   </button>
-                  <label className="flex items-center gap-1.5 text-xs">
+                  <label
+                    className="flex items-center gap-1.5 text-xs"
+                    onClick={(e) => e.stopPropagation()}
+                  >
                     <input
                       type="checkbox"
                       checked={ticket.status === "blocked"}
@@ -346,7 +364,10 @@ export default function PlanningClient({
                     />
                     Blocked
                   </label>
-                  <label className="flex items-center gap-1.5 text-xs">
+                  <label
+                    className="flex items-center gap-1.5 text-xs"
+                    onClick={(e) => e.stopPropagation()}
+                  >
                     <input
                       type="checkbox"
                       checked={ticket.isPublic}
@@ -356,14 +377,20 @@ export default function PlanningClient({
                   </label>
                   {ticket.taskType === "Idea" && (
                     <button
-                      onClick={() => promoteToTask(ticket._id, "board")}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        promoteToTask(ticket._id, "board");
+                      }}
                       className="rounded bg-zinc-100 px-2 py-1 text-xs font-medium dark:bg-zinc-800"
                     >
                       Promote to Task
                     </button>
                   )}
                   <button
-                    onClick={() => handleDelete(ticket._id, ticket.key, "board")}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleDelete(ticket._id, ticket.key, "board");
+                    }}
                     className="rounded bg-red-50 px-2 py-1 text-xs font-medium text-red-700 dark:bg-red-950 dark:text-red-300"
                   >
                     Delete
