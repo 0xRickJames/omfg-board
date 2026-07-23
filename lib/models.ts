@@ -72,7 +72,7 @@ export interface Ticket {
   createdBy: string;
 }
 
-export type UserRole = "founder" | "member";
+export type UserRole = "founder" | "planner" | "member";
 
 export interface User {
   _id?: ObjectId;

@@ -17,7 +17,7 @@ export default function Nav({ session }: { session: Session | null }) {
         <Link href="/list" className="text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100">
           List
         </Link>
-        {session?.user?.role === "founder" && (
+        {(session?.user?.role === "founder" || session?.user?.role === "planner") && (
           <Link href="/planning" className="text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100">
             Planning
           </Link>

@@ -49,7 +49,7 @@ OMFGposite. Keep it lean. Resist scOMFGe creep.
 - `createdAt`, `updatedAt`, `createdBy`
 
 ### `users`
-- `_id`, `discordId`, `username`, `avatar`, `role` (`founder | member`)
+- `_id`, `discordId`, `username`, `avatar`, `role` (`founder | planner | member`)
 
 ---
 
@@ -80,9 +80,11 @@ toggle (off by default).
 ## Later phases — DO NOT build yet, just leave clean seams
 
 ### Phase 4 — Founder planning view (DONE)
-`/planning`, visible only to `role: founder` (named to avoid clashing with the
-ticket `owners` field). This IS the sprint-planning replacement — two columns,
-side by side:
+`/planning`, visible to `role: founder` OR `role: planner` (named to avoid
+clashing with the ticket `owners` field). `role` is a single value per user,
+not a set — `planner` was added as a second, non-founder value that also
+unlocks Planning; Rick's own role is currently set to `planner`. This IS the
+sprint-planning replacement — two columns, side by side:
 - **Backlog** column: every `status: backlog` ticket. Per row: "Add to board"
   (→ `todo`), "Mark blocked" (→ `blocked`), and if `taskType: Idea` also
   "Promote to Task" / "Kill".
