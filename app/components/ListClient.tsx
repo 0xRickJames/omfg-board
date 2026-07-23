@@ -14,6 +14,7 @@ import {
 import TicketFilters from "@/app/components/TicketFilters";
 import TicketModal from "@/app/components/TicketModal";
 import MemberAvatar from "@/app/components/MemberAvatar";
+import NewTicketButton from "@/app/components/NewTicketButton";
 
 type SortField =
   | "key"
@@ -86,10 +87,18 @@ export default function ListClient({
   team: TeamMember[];
 }) {
   const [tickets, setTickets] = useState(initialTickets);
+  const [prevInitialTickets, setPrevInitialTickets] = useState(initialTickets);
   const [filters, setFilters] = useState<TicketFilterValues>(ALL_TICKET_FILTERS);
   const [sortField, setSortField] = useState<SortField>("createdAt");
   const [sortDirection, setSortDirection] = useState<SortDirection>("desc");
   const [editingTicket, setEditingTicket] = useState<TicketDTO | null>(null);
+
+  // initialTickets comes from a fresh server fetch on every router.refresh()
+  // (e.g. after creating a ticket) — resync local state when it changes.
+  if (initialTickets !== prevInitialTickets) {
+    setPrevInitialTickets(initialTickets);
+    setTickets(initialTickets);
+  }
 
   const labelOptions = useMemo(() => collectLabels(tickets), [tickets]);
 
@@ -125,12 +134,15 @@ export default function ListClient({
   return (
     <div className="mx-auto flex w-full max-w-6xl flex-1 flex-col gap-4 px-6 py-6">
       <h1 className="text-xl font-semibold">All Tickets</h1>
-      <TicketFilters
-        values={filters}
-        onChange={setFilters}
-        team={team}
-        labelOptions={labelOptions}
-      />
+      <div className="flex items-center justify-between gap-2">
+        <TicketFilters
+          values={filters}
+          onChange={setFilters}
+          team={team}
+          labelOptions={labelOptions}
+        />
+        <NewTicketButton team={team} />
+      </div>
 
       <div className="overflow-x-auto rounded border border-zinc-200 dark:border-zinc-800">
         <table className="w-full min-w-max text-left text-sm">

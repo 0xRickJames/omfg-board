@@ -14,6 +14,7 @@ import {
 import TicketFilters from "@/app/components/TicketFilters";
 import TicketModal from "@/app/components/TicketModal";
 import MemberAvatar from "@/app/components/MemberAvatar";
+import NewTicketButton from "@/app/components/NewTicketButton";
 
 function patchTicket(id: string, body: Record<string, unknown>) {
   fetch(`/api/tickets/${id}`, {
@@ -34,8 +35,32 @@ export default function PlanningClient({
 }) {
   const [backlogTickets, setBacklogTickets] = useState(initialBacklogTickets);
   const [boardTickets, setBoardTickets] = useState(initialBoardTickets);
+  const [prevInitialBacklog, setPrevInitialBacklog] = useState(initialBacklogTickets);
+  const [prevInitialBoard, setPrevInitialBoard] = useState(initialBoardTickets);
   const [filters, setFilters] = useState<TicketFilterValues>(ALL_TICKET_FILTERS);
   const [editingTicket, setEditingTicket] = useState<TicketDTO | null>(null);
+  const [expanded, setExpanded] = useState<Set<string>>(new Set());
+
+  // initialBacklogTickets/initialBoardTickets come from a fresh server fetch
+  // on every router.refresh() (e.g. after creating a ticket) — resync local
+  // state when they change.
+  if (initialBacklogTickets !== prevInitialBacklog) {
+    setPrevInitialBacklog(initialBacklogTickets);
+    setBacklogTickets(initialBacklogTickets);
+  }
+  if (initialBoardTickets !== prevInitialBoard) {
+    setPrevInitialBoard(initialBoardTickets);
+    setBoardTickets(initialBoardTickets);
+  }
+
+  function toggleExpanded(id: string) {
+    setExpanded((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }
 
   const labelOptions = useMemo(
     () => collectLabels(backlogTickets, boardTickets),
@@ -130,12 +155,15 @@ export default function PlanningClient({
         planning meeting required.
       </p>
 
-      <TicketFilters
-        values={filters}
-        onChange={setFilters}
-        team={team}
-        labelOptions={labelOptions}
-      />
+      <div className="flex items-center justify-between gap-2">
+        <TicketFilters
+          values={filters}
+          onChange={setFilters}
+          team={team}
+          labelOptions={labelOptions}
+        />
+        <NewTicketButton team={team} />
+      </div>
 
       <div className="grid flex-1 grid-cols-2 gap-4">
         <section className="flex flex-col gap-2">
@@ -168,6 +196,18 @@ export default function PlanningClient({
                     </div>
                   )}
                   <span className="flex-1 truncate">{ticket.title}</span>
+                  {ticket.description.trim() && (
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        toggleExpanded(ticket._id);
+                      }}
+                      aria-label="Toggle description"
+                      className="shrink-0 text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100"
+                    >
+                      {expanded.has(ticket._id) ? "▾" : "▸"}
+                    </button>
+                  )}
                   <span className="shrink-0 text-xs text-zinc-400">
                     {timeAgo(ticket.createdAt)}
                   </span>
@@ -179,6 +219,11 @@ export default function PlanningClient({
                     </span>
                   )}
                 </div>
+                {expanded.has(ticket._id) && ticket.description.trim() && (
+                  <p className="whitespace-pre-wrap text-xs text-zinc-600 dark:text-zinc-400">
+                    {ticket.description}
+                  </p>
+                )}
                 <div className="flex flex-wrap items-center gap-3" onClick={(e) => e.stopPropagation()}>
                   <button
                     onClick={() => moveToBoard(ticket._id)}
@@ -252,6 +297,18 @@ export default function PlanningClient({
                     </div>
                   )}
                   <span className="flex-1 truncate">{ticket.title}</span>
+                  {ticket.description.trim() && (
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        toggleExpanded(ticket._id);
+                      }}
+                      aria-label="Toggle description"
+                      className="shrink-0 text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100"
+                    >
+                      {expanded.has(ticket._id) ? "▾" : "▸"}
+                    </button>
+                  )}
                   <span className="shrink-0 text-xs text-zinc-400">
                     {timeAgo(ticket.createdAt)}
                   </span>
@@ -266,6 +323,11 @@ export default function PlanningClient({
                     {STATUS_LABELS[ticket.status]}
                   </span>
                 </div>
+                {expanded.has(ticket._id) && ticket.description.trim() && (
+                  <p className="whitespace-pre-wrap text-xs text-zinc-600 dark:text-zinc-400">
+                    {ticket.description}
+                  </p>
+                )}
                 <div
                   className="flex flex-wrap items-center gap-3"
                   onClick={(e) => e.stopPropagation()}

@@ -29,6 +29,7 @@ import {
 import TicketCard from "@/app/components/TicketCard";
 import TicketFilters from "@/app/components/TicketFilters";
 import TicketModal from "@/app/components/TicketModal";
+import NewTicketButton from "@/app/components/NewTicketButton";
 
 type BoardStatus = "todo" | "blocked" | "in_progress" | "testing" | "done";
 
@@ -40,6 +41,22 @@ const COLUMN_LABELS: Record<BoardStatus, string> = {
   testing: "Testing",
   done: "Done",
 };
+
+function groupByColumn(tickets: TicketDTO[]): Record<BoardStatus, TicketDTO[]> {
+  const grouped: Record<BoardStatus, TicketDTO[]> = {
+    todo: [],
+    blocked: [],
+    in_progress: [],
+    testing: [],
+    done: [],
+  };
+  for (const ticket of tickets) {
+    if (ticket.status in grouped) {
+      grouped[ticket.status as BoardStatus].push(ticket);
+    }
+  }
+  return grouped;
+}
 
 function computeOrder(prevOrder?: number, nextOrder?: number): number {
   if (prevOrder !== undefined && nextOrder !== undefined) {
@@ -129,24 +146,20 @@ export default function BoardClient({
   initialTickets: TicketDTO[];
   team: TeamMember[];
 }) {
-  const [columns, setColumns] = useState<Record<BoardStatus, TicketDTO[]>>(() => {
-    const grouped: Record<BoardStatus, TicketDTO[]> = {
-      todo: [],
-      blocked: [],
-      in_progress: [],
-      testing: [],
-      done: [],
-    };
-    for (const ticket of initialTickets) {
-      if (ticket.status in grouped) {
-        grouped[ticket.status as BoardStatus].push(ticket);
-      }
-    }
-    return grouped;
-  });
+  const [columns, setColumns] = useState<Record<BoardStatus, TicketDTO[]>>(() =>
+    groupByColumn(initialTickets),
+  );
+  const [prevInitialTickets, setPrevInitialTickets] = useState(initialTickets);
   const [filters, setFilters] = useState<TicketFilterValues>(ALL_TICKET_FILTERS);
   const [activeId, setActiveId] = useState<string | null>(null);
   const [editingTicket, setEditingTicket] = useState<TicketDTO | null>(null);
+
+  // initialTickets comes from a fresh server fetch on every router.refresh()
+  // (e.g. after creating a ticket) — resync local state when it changes.
+  if (initialTickets !== prevInitialTickets) {
+    setPrevInitialTickets(initialTickets);
+    setColumns(groupByColumn(initialTickets));
+  }
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
@@ -256,12 +269,15 @@ export default function BoardClient({
 
   return (
     <div className="flex flex-1 flex-col gap-4 px-6 py-6">
-      <TicketFilters
-        values={filters}
-        onChange={setFilters}
-        team={team}
-        labelOptions={labelOptions}
-      />
+      <div className="flex items-center justify-between gap-2">
+        <TicketFilters
+          values={filters}
+          onChange={setFilters}
+          team={team}
+          labelOptions={labelOptions}
+        />
+        <NewTicketButton team={team} />
+      </div>
       <DndContext
         sensors={sensors}
         collisionDetection={closestCorners}

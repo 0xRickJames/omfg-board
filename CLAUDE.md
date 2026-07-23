@@ -187,12 +187,19 @@ Do NOT run this until Phases 1–3 exist and the schema is stable.
 
 ---
 
----
-
 ## Post-launch improvements (beyond the original 7 phases)
 
 - **Delete everywhere**: every ticket surface (Board, Backlog, Planning rows,
   List) has its own Delete button, not just Idea rows.
+- **New ticket everywhere**: `NewTicketButton` (shared, self-contained —
+  opens its own create-mode modal, `router.refresh()`s on save) is on Board,
+  Planning, and List. Backlog keeps its own bespoke create/edit modal state
+  since it already worked. Board/Planning/List all gained the same
+  resync-from-fresh-props pattern Backlog already had, so a refresh actually
+  shows the new ticket instead of being stuck on stale initial state.
+- **Planning description preview**: a ▸/▾ caret next to the title (only
+  shown when a ticket has a description) expands it inline, without opening
+  the full modal.
 - **Owner avatars**: `TicketCard`, Planning rows, and the List view all show
   stacked `MemberAvatar`s (`app/components/MemberAvatar.tsx`, shared) for a
   ticket's `owners`, pulled from `lib/team.ts`'s roster + live avatars.
