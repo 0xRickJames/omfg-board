@@ -38,9 +38,11 @@ export default function TicketCard({
       </div>
       <p className="font-medium">{ticket.title}</p>
       <div className="flex flex-wrap items-center gap-1.5">
-        <span className="rounded bg-zinc-100 px-2 py-0.5 text-xs dark:bg-zinc-800">
-          {ticket.workType}
-        </span>
+        {ticket.workType !== "none" && (
+          <span className="rounded bg-zinc-100 px-2 py-0.5 text-xs dark:bg-zinc-800">
+            {ticket.workType}
+          </span>
+        )}
         <span className="rounded bg-zinc-100 px-2 py-0.5 text-xs dark:bg-zinc-800">
           {ticket.taskType}
         </span>

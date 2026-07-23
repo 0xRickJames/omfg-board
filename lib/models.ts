@@ -6,7 +6,9 @@ export type WorkType =
   | "Design"
   | "Frontend"
   | "Backend"
-  | "Research";
+  | "Research"
+  | "Ops"
+  | "none";
 
 export type TaskType = "Idea" | "Task" | "Bug";
 

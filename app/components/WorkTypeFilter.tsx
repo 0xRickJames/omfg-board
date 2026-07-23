@@ -9,6 +9,8 @@ const WORK_TYPES: WorkType[] = [
   "Frontend",
   "Backend",
   "Research",
+  "Ops",
+  "none",
 ];
 
 export default function WorkTypeFilter({
@@ -27,7 +29,7 @@ export default function WorkTypeFilter({
       <option value="all">All work types</option>
       {WORK_TYPES.map((w) => (
         <option key={w} value={w}>
-          {w}
+          {w === "none" ? "None" : w}
         </option>
       ))}
     </select>

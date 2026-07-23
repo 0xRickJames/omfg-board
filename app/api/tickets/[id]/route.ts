@@ -18,6 +18,8 @@ const VALID_WORK_TYPES: WorkType[] = [
   "Frontend",
   "Backend",
   "Research",
+  "Ops",
+  "none",
 ];
 const VALID_TASK_TYPES: TaskType[] = ["Idea", "Task", "Bug"];
 const VALID_PRIORITIES: Priority[] = ["none", "low", "med", "high", "urgent"];

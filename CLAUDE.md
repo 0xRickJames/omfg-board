@@ -34,7 +34,7 @@ OMFGposite. Keep it lean. Resist scOMFGe creep.
 - `key` — human ID like `OMFG-42`, auto-incremented via a `counters` doc
 - `title`
 - `description` — markdown string
-- `workType` — `BD | Marketing | Design | Frontend | Backend | Research`
+- `workType` — `BD | Marketing | Design | Frontend | Backend | Research | Ops | none`
 - `taskType` — `Idea | Task | Bug`
 - `status` — `backlog | todo | blocked | in_progress | testing | done`
 - `priority` — `none | low | med | high | urgent`

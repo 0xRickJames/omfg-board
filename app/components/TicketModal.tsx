@@ -12,6 +12,8 @@ const WORK_TYPES: WorkType[] = [
   "Frontend",
   "Backend",
   "Research",
+  "Ops",
+  "none",
 ];
 const TASK_TYPES: TaskType[] = ["Idea", "Task", "Bug"];
 const PRIORITIES: Priority[] = ["none", "low", "med", "high", "urgent"];
@@ -196,7 +198,7 @@ export default function TicketModal({
               >
                 {WORK_TYPES.map((w) => (
                   <option key={w} value={w}>
-                    {w}
+                    {w === "none" ? "None" : w}
                   </option>
                 ))}
               </select>
