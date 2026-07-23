@@ -1,6 +1,7 @@
 import Link from "next/link";
 import type { Session } from "next-auth";
 import SignOutButton from "@/app/components/SignOutButton";
+import ThemeToggle from "@/app/components/ThemeToggle";
 
 export default function Nav({ session }: { session: Session | null }) {
   return (
@@ -28,6 +29,7 @@ export default function Nav({ session }: { session: Session | null }) {
             {session.user.name} ({session.user.role})
           </span>
         )}
+        <ThemeToggle />
         <SignOutButton />
       </div>
     </header>
