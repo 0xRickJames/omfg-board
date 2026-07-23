@@ -1,11 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/auth";
 import { moveTicket, updateTicket, pickUpdateFields, deleteTicket } from "@/lib/tickets";
-import type { TicketStatus, WorkType, TaskType, Priority } from "@/lib/models";
+import type { Ticket, TicketStatus, WorkType, TaskType, Priority } from "@/lib/models";
 
 const VALID_STATUSES: TicketStatus[] = [
   "backlog",
   "todo",
+  "blocked",
   "in_progress",
   "testing",
   "done",
@@ -33,19 +34,14 @@ export async function PATCH(
   const { id } = await params;
   const body = await req.json();
 
-  // Drag-and-drop moves send {status, order}; the edit modal sends the rest.
-  if (typeof body.status === "string") {
-    if (!VALID_STATUSES.includes(body.status)) {
-      return NextResponse.json({ error: "invalid status" }, { status: 400 });
-    }
-    if (body.order !== undefined && typeof body.order !== "number") {
-      return NextResponse.json({ error: "order must be a number" }, { status: 400 });
-    }
-    const ticket = await moveTicket(id, { status: body.status, order: body.order });
-    if (!ticket) {
-      return NextResponse.json({ error: "not found" }, { status: 404 });
-    }
-    return NextResponse.json(ticket);
+  // Drag-and-drop moves send only {status, order}; the edit modal can send
+  // both a status change and the rest of the fields in one request.
+  const hasStatus = typeof body.status === "string";
+  if (hasStatus && !VALID_STATUSES.includes(body.status)) {
+    return NextResponse.json({ error: "invalid status" }, { status: 400 });
+  }
+  if (body.order !== undefined && typeof body.order !== "number") {
+    return NextResponse.json({ error: "order must be a number" }, { status: 400 });
   }
 
   const updates = pickUpdateFields(body);
@@ -58,14 +54,24 @@ export async function PATCH(
   if (updates.priority && !VALID_PRIORITIES.includes(updates.priority)) {
     return NextResponse.json({ error: "invalid priority" }, { status: 400 });
   }
-  if (Object.keys(updates).length === 0) {
+  if (!hasStatus && Object.keys(updates).length === 0) {
     return NextResponse.json({ error: "no valid fields to update" }, { status: 400 });
   }
 
-  const ticket = await updateTicket(id, updates);
-  if (!ticket) {
-    return NextResponse.json({ error: "not found" }, { status: 404 });
+  let ticket: Ticket | null = null;
+  if (Object.keys(updates).length > 0) {
+    ticket = await updateTicket(id, updates);
+    if (!ticket) {
+      return NextResponse.json({ error: "not found" }, { status: 404 });
+    }
   }
+  if (hasStatus) {
+    ticket = await moveTicket(id, { status: body.status, order: body.order });
+    if (!ticket) {
+      return NextResponse.json({ error: "not found" }, { status: 404 });
+    }
+  }
+
   return NextResponse.json(ticket);
 }
 

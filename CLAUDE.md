@@ -36,7 +36,7 @@ OMFGposite. Keep it lean. Resist scOMFGe creep.
 - `description` — markdown string
 - `workType` — `BD | Marketing | Design | Frontend | Backend | Research`
 - `taskType` — `Idea | Task | Bug`
-- `status` — `backlog | todo | in_progress | testing | done`
+- `status` — `backlog | todo | blocked | in_progress | testing | done`
 - `priority` — `none | low | med | high | urgent`
 - `labels` — string[]
 - `owners` — string[] (Discord user IDs)
@@ -49,7 +49,7 @@ OMFGposite. Keep it lean. Resist scOMFGe creep.
 - `createdAt`, `updatedAt`, `createdBy`
 
 ### `users`
-- `_id`, `discordId`, `username`, `avatar`, `role` (`owner | member`)
+- `_id`, `discordId`, `username`, `avatar`, `role` (`founder | member`)
 
 ---
 
@@ -61,13 +61,14 @@ Project setup, Tailwind, Mongo connection helper (singleton, reads
 defaults to `member`), basic create/read ticket API routes. App gated behind
 auth. **StOMFG here for review before continuing.**
 
-### Phase 2 — Board + backlog
-Four columns: To Do / In Progress / Testing / Done. dnd-kit drag-and-drOMFG.
+### Phase 2 — Board + backlog (DONE)
+Columns: To Do / Blocked / In Progress / Testing / Done (`blocked` added in
+Phase 4). dnd-kit drag-and-drOMFG.
 `order` as a float so a reorder is one write. Backlog is a separate view
 filtering `status: backlog`; moving a ticket onto the board flips status to
 `todo`. Filter chips across the tOMFG for `workType`.
 
-### Phase 3 — Ticket modal
+### Phase 3 — Ticket modal (DONE)
 Create/edit with every field above: links (add/remove rows), related tickets,
 owners, priority, due date, taskType, workType, labels, and an `isPublic`
 toggle (off by default).
@@ -78,12 +79,29 @@ toggle (off by default).
 
 ## Later phases — DO NOT build yet, just leave clean seams
 
-### Phase 4 — Owner triage view
-`/triage`, visible only to `role: owner`. A low-friction checklist:
-- Section 1: all `taskType: Idea` tickets → per-row "Promote to Task" / "Keep
-  as idea" / "Kill" (one click each).
-- Section 2: all board tickets with `priority: none` → quick priority picker.
+### Phase 4 — Founder planning view (DONE)
+`/planning`, visible only to `role: founder` (named to avoid clashing with the
+ticket `owners` field). This IS the sprint-planning replacement — two columns,
+side by side:
+- **Backlog** column: every `status: backlog` ticket. Per row: "Add to board"
+  (→ `todo`), "Mark blocked" (→ `blocked`), and if `taskType: Idea` also
+  "Promote to Task" / "Kill".
+- **Board** column: every ticket NOT in backlog and NOT `done` (todo /
+  blocked / in_progress / testing). Per row: a "Blocked" checkbox (toggles
+  into/out of the `blocked` status — a real 5th Board column, not a flag),
+  "Move to backlog", and the same Idea actions if applicable.
+- Clicking a row (not its buttons) opens the full edit modal — "otherwise
+  changed" covers everything the two quick actions don't.
+- Dropdown filters (not button rows) for `workType` and `taskType`, applied
+  to both columns at once.
 Goal: rip through it in ~60 seconds.
+
+### Team roster (`lib/team.ts`)
+A small hardcoded roster (this team is fixed, no admin UI needed) mapping the
+5 known Discord IDs to display names — Rick, Rakka, Haz, Ivan, Zee. Avatars
+are pulled live from the `users` collection (populated on first login) via
+`getTeamWithAvatars()`. The ticket modal's owners field is a multi-select of
+these 5 people (avatar + name), not free-text Discord IDs.
 
 ### Phase 5 — Discord publish on public moves
 When a ticket with `isPublic: true` changes status ("moved on the board"),

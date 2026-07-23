@@ -13,6 +13,7 @@ export type TaskType = "Idea" | "Task" | "Bug";
 export type TicketStatus =
   | "backlog"
   | "todo"
+  | "blocked"
   | "in_progress"
   | "testing"
   | "done";
@@ -52,7 +53,7 @@ export interface Ticket {
   createdBy: string;
 }
 
-export type UserRole = "owner" | "member";
+export type UserRole = "founder" | "member";
 
 export interface User {
   _id?: ObjectId;

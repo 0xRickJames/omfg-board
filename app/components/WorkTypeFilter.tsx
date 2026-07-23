@@ -18,23 +18,18 @@ export default function WorkTypeFilter({
   value: WorkType | "all";
   onChange: (value: WorkType | "all") => void;
 }) {
-  const options: (WorkType | "all")[] = ["all", ...WORK_TYPES];
-
   return (
-    <div className="flex flex-wrap gap-2">
-      {options.map((option) => (
-        <button
-          key={option}
-          onClick={() => onChange(option)}
-          className={`rounded-full px-3 py-1 text-xs font-medium transition-colors ${
-            value === option
-              ? "bg-zinc-900 text-white dark:bg-zinc-50 dark:text-zinc-900"
-              : "bg-zinc-100 text-zinc-600 hover:bg-zinc-200 dark:bg-zinc-800 dark:text-zinc-300 dark:hover:bg-zinc-700"
-          }`}
-        >
-          {option === "all" ? "All" : option}
-        </button>
+    <select
+      value={value}
+      onChange={(e) => onChange(e.target.value as WorkType | "all")}
+      className="rounded border border-zinc-300 px-2 py-1.5 text-xs dark:border-zinc-700 dark:bg-zinc-800"
+    >
+      <option value="all">All work types</option>
+      {WORK_TYPES.map((w) => (
+        <option key={w} value={w}>
+          {w}
+        </option>
       ))}
-    </div>
+    </select>
   );
 }

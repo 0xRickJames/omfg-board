@@ -2,7 +2,8 @@
 
 import { useState } from "react";
 import type { TicketDTO } from "@/lib/tickets";
-import type { WorkType, TaskType, Priority, TicketLink } from "@/lib/models";
+import type { WorkType, TaskType, Priority, TicketStatus, TicketLink } from "@/lib/models";
+import type { TeamMember } from "@/lib/team";
 
 const WORK_TYPES: WorkType[] = [
   "BD",
@@ -14,6 +15,14 @@ const WORK_TYPES: WorkType[] = [
 ];
 const TASK_TYPES: TaskType[] = ["Idea", "Task", "Bug"];
 const PRIORITIES: Priority[] = ["none", "low", "med", "high", "urgent"];
+const STATUSES: { value: TicketStatus; label: string }[] = [
+  { value: "backlog", label: "Backlog" },
+  { value: "todo", label: "To Do" },
+  { value: "blocked", label: "Blocked" },
+  { value: "in_progress", label: "In Progress" },
+  { value: "testing", label: "Testing" },
+  { value: "done", label: "Done" },
+];
 
 function parseList(text: string): string[] {
   return text
@@ -22,14 +31,25 @@ function parseList(text: string): string[] {
     .filter(Boolean);
 }
 
+function MemberAvatar({ member }: { member: TeamMember }) {
+  return member.avatar ? (
+    // eslint-disable-next-line @next/next/no-img-element
+    <img src={member.avatar} alt="" className="h-5 w-5 rounded-full" />
+  ) : (
+    <span className="flex h-5 w-5 items-center justify-center rounded-full bg-zinc-400 text-[10px] text-white">
+      {member.name[0]}
+    </span>
+  );
+}
+
 export default function TicketModal({
   ticket,
-  currentUserDiscordId,
+  team,
   onClose,
   onSaved,
 }: {
   ticket: TicketDTO | null;
-  currentUserDiscordId: string;
+  team: TeamMember[];
   onClose: () => void;
   onSaved: (ticket: TicketDTO) => void;
 }) {
@@ -40,8 +60,10 @@ export default function TicketModal({
   const [workType, setWorkType] = useState<WorkType>(ticket?.workType ?? "Frontend");
   const [taskType, setTaskType] = useState<TaskType>(ticket?.taskType ?? "Task");
   const [priority, setPriority] = useState<Priority>(ticket?.priority ?? "none");
+  const [status, setStatus] = useState<TicketStatus>(ticket?.status ?? "backlog");
   const [labelsText, setLabelsText] = useState((ticket?.labels ?? []).join(", "));
-  const [ownersText, setOwnersText] = useState((ticket?.owners ?? []).join(", "));
+  const [owners, setOwners] = useState<string[]>(ticket?.owners ?? []);
+  const [showOwnerPicker, setShowOwnerPicker] = useState(false);
   const [dueDate, setDueDate] = useState(ticket?.dueDate ?? "");
   const [links, setLinks] = useState<TicketLink[]>(ticket?.links ?? []);
   const [relatedText, setRelatedText] = useState((ticket?.related ?? []).join(", "));
@@ -59,10 +81,13 @@ export default function TicketModal({
     setLinks((prev) => prev.filter((_, i) => i !== index));
   }
 
-  function assignMe() {
-    const owners = new Set(parseList(ownersText));
-    owners.add(currentUserDiscordId);
-    setOwnersText(Array.from(owners).join(", "));
+  function addOwner(discordId: string) {
+    setOwners((prev) => (prev.includes(discordId) ? prev : [...prev, discordId]));
+    setShowOwnerPicker(false);
+  }
+
+  function removeOwner(discordId: string) {
+    setOwners((prev) => prev.filter((id) => id !== discordId));
   }
 
   async function handleSubmit(e: React.FormEvent) {
@@ -76,8 +101,9 @@ export default function TicketModal({
       workType,
       taskType,
       priority,
+      status,
       labels: parseList(labelsText),
-      owners: parseList(ownersText),
+      owners,
       dueDate: dueDate || null,
       links: links.filter((l) => l.label.trim() && l.url.trim()),
       related: parseList(relatedText).map((k) => k.toUpperCase()),
@@ -146,7 +172,21 @@ export default function TicketModal({
             />
           </div>
 
-          <div className="grid grid-cols-3 gap-3">
+          <div className="grid grid-cols-2 gap-3">
+            <div className="flex flex-col gap-1">
+              <label className="text-xs font-medium text-zinc-500">Status</label>
+              <select
+                value={status}
+                onChange={(e) => setStatus(e.target.value as TicketStatus)}
+                className="rounded border border-zinc-300 px-2 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-800"
+              >
+                {STATUSES.map((s) => (
+                  <option key={s.value} value={s.value}>
+                    {s.label}
+                  </option>
+                ))}
+              </select>
+            </div>
             <div className="flex flex-col gap-1">
               <label className="text-xs font-medium text-zinc-500">Work type</label>
               <select
@@ -204,23 +244,60 @@ export default function TicketModal({
           </div>
 
           <div className="flex flex-col gap-1">
-            <div className="flex items-center justify-between">
-              <label className="text-xs font-medium text-zinc-500">
-                Owners (Discord IDs, comma-separated)
-              </label>
-              <button
-                type="button"
-                onClick={assignMe}
-                className="text-xs text-zinc-500 underline hover:text-zinc-900 dark:hover:text-zinc-100"
-              >
-                Assign me
-              </button>
+            <label className="text-xs font-medium text-zinc-500">Owners</label>
+            <div className="flex flex-wrap items-center gap-2">
+              {owners.map((discordId) => {
+                const member = team.find((m) => m.discordId === discordId);
+                if (!member) return null;
+                return (
+                  <span
+                    key={discordId}
+                    className="flex items-center gap-1.5 rounded-full bg-zinc-900 py-1 pl-1 pr-2 text-xs font-medium text-white dark:bg-zinc-50 dark:text-zinc-900"
+                  >
+                    <MemberAvatar member={member} />
+                    {member.name}
+                    <button
+                      type="button"
+                      onClick={() => removeOwner(discordId)}
+                      aria-label={`Remove ${member.name}`}
+                      className="text-white/70 hover:text-white dark:text-zinc-900/70 dark:hover:text-zinc-900"
+                    >
+                      ✕
+                    </button>
+                  </span>
+                );
+              })}
+
+              <div className="relative">
+                <button
+                  type="button"
+                  onClick={() => setShowOwnerPicker((prev) => !prev)}
+                  className="rounded-full bg-zinc-100 px-3 py-1 text-xs font-medium text-zinc-600 hover:bg-zinc-200 dark:bg-zinc-800 dark:text-zinc-300 dark:hover:bg-zinc-700"
+                >
+                  + Add owner
+                </button>
+                {showOwnerPicker && (
+                  <div className="absolute left-0 top-full z-10 mt-1 flex min-w-32 flex-col gap-1 rounded border border-zinc-200 bg-white p-1 shadow-lg dark:border-zinc-700 dark:bg-zinc-800">
+                    {team
+                      .filter((member) => !owners.includes(member.discordId))
+                      .map((member) => (
+                        <button
+                          type="button"
+                          key={member.discordId}
+                          onClick={() => addOwner(member.discordId)}
+                          className="flex items-center gap-2 rounded px-2 py-1 text-left text-xs hover:bg-zinc-100 dark:hover:bg-zinc-700"
+                        >
+                          <MemberAvatar member={member} />
+                          {member.name}
+                        </button>
+                      ))}
+                    {team.every((member) => owners.includes(member.discordId)) && (
+                      <span className="px-2 py-1 text-xs text-zinc-400">Everyone&apos;s added</span>
+                    )}
+                  </div>
+                )}
+              </div>
             </div>
-            <input
-              value={ownersText}
-              onChange={(e) => setOwnersText(e.target.value)}
-              className="rounded border border-zinc-300 px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-800"
-            />
           </div>
 
           <div className="flex flex-col gap-1">

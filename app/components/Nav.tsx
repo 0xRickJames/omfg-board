@@ -13,6 +13,11 @@ export default function Nav({ session }: { session: Session | null }) {
         <Link href="/backlog" className="text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100">
           Backlog
         </Link>
+        {session?.user?.role === "founder" && (
+          <Link href="/planning" className="text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100">
+            Planning
+          </Link>
+        )}
       </nav>
       <div className="flex items-center gap-3 text-sm text-zinc-500">
         {session?.user && (

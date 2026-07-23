@@ -19,16 +19,23 @@ import {
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import type { TicketDTO } from "@/lib/tickets";
-import type { WorkType } from "@/lib/models";
+import type { TeamMember } from "@/lib/team";
+import {
+  ALL_TICKET_FILTERS,
+  matchesTicketFilters,
+  collectLabels,
+  type TicketFilterValues,
+} from "@/lib/ticketFilters";
 import TicketCard from "@/app/components/TicketCard";
-import WorkTypeFilter from "@/app/components/WorkTypeFilter";
+import TicketFilters from "@/app/components/TicketFilters";
 import TicketModal from "@/app/components/TicketModal";
 
-type BoardStatus = "todo" | "in_progress" | "testing" | "done";
+type BoardStatus = "todo" | "blocked" | "in_progress" | "testing" | "done";
 
-const COLUMN_ORDER: BoardStatus[] = ["todo", "in_progress", "testing", "done"];
+const COLUMN_ORDER: BoardStatus[] = ["todo", "blocked", "in_progress", "testing", "done"];
 const COLUMN_LABELS: Record<BoardStatus, string> = {
   todo: "To Do",
+  blocked: "Blocked",
   in_progress: "In Progress",
   testing: "Testing",
   done: "Done",
@@ -111,14 +118,15 @@ function Column({
 
 export default function BoardClient({
   initialTickets,
-  currentUserDiscordId,
+  team,
 }: {
   initialTickets: TicketDTO[];
-  currentUserDiscordId: string;
+  team: TeamMember[];
 }) {
   const [columns, setColumns] = useState<Record<BoardStatus, TicketDTO[]>>(() => {
     const grouped: Record<BoardStatus, TicketDTO[]> = {
       todo: [],
+      blocked: [],
       in_progress: [],
       testing: [],
       done: [],
@@ -130,7 +138,7 @@ export default function BoardClient({
     }
     return grouped;
   });
-  const [workType, setWorkType] = useState<WorkType | "all">("all");
+  const [filters, setFilters] = useState<TicketFilterValues>(ALL_TICKET_FILTERS);
   const [activeId, setActiveId] = useState<string | null>(null);
   const [editingTicket, setEditingTicket] = useState<TicketDTO | null>(null);
 
@@ -138,14 +146,18 @@ export default function BoardClient({
     useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
   );
 
+  const labelOptions = useMemo(
+    () => collectLabels(...COLUMN_ORDER.map((status) => columns[status])),
+    [columns],
+  );
+
   const filteredColumns = useMemo(() => {
-    if (workType === "all") return columns;
     const filtered = {} as Record<BoardStatus, TicketDTO[]>;
     for (const status of COLUMN_ORDER) {
-      filtered[status] = columns[status].filter((t) => t.workType === workType);
+      filtered[status] = columns[status].filter((t) => matchesTicketFilters(t, filters));
     }
     return filtered;
-  }, [columns, workType]);
+  }, [columns, filters]);
 
   const activeTicket = useMemo(() => {
     if (!activeId) return null;
@@ -223,7 +235,13 @@ export default function BoardClient({
     setColumns((prev) => {
       const next = {} as Record<BoardStatus, TicketDTO[]>;
       for (const status of COLUMN_ORDER) {
-        next[status] = prev[status].map((t) => (t._id === saved._id ? saved : t));
+        next[status] = prev[status].filter((t) => t._id !== saved._id);
+      }
+      // The modal can change status too (e.g. to "backlog") — relocate the
+      // ticket to its new column, or drop it if it's left the board entirely.
+      if ((COLUMN_ORDER as string[]).includes(saved.status)) {
+        const col = saved.status as BoardStatus;
+        next[col] = [...next[col], saved].sort((a, b) => a.order - b.order);
       }
       return next;
     });
@@ -232,7 +250,12 @@ export default function BoardClient({
 
   return (
     <div className="flex flex-1 flex-col gap-4 px-6 py-6">
-      <WorkTypeFilter value={workType} onChange={setWorkType} />
+      <TicketFilters
+        values={filters}
+        onChange={setFilters}
+        team={team}
+        labelOptions={labelOptions}
+      />
       <DndContext
         sensors={sensors}
         collisionDetection={closestCorners}
@@ -259,7 +282,7 @@ export default function BoardClient({
       {editingTicket && (
         <TicketModal
           ticket={editingTicket}
-          currentUserDiscordId={currentUserDiscordId}
+          team={team}
           onClose={() => setEditingTicket(null)}
           onSaved={handleSaved}
         />

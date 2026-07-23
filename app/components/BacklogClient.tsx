@@ -2,21 +2,27 @@
 
 import { useMemo, useState } from "react";
 import type { TicketDTO } from "@/lib/tickets";
-import type { WorkType } from "@/lib/models";
+import type { TeamMember } from "@/lib/team";
+import {
+  ALL_TICKET_FILTERS,
+  matchesTicketFilters,
+  collectLabels,
+  type TicketFilterValues,
+} from "@/lib/ticketFilters";
 import TicketCard from "@/app/components/TicketCard";
-import WorkTypeFilter from "@/app/components/WorkTypeFilter";
+import TicketFilters from "@/app/components/TicketFilters";
 import TicketModal from "@/app/components/TicketModal";
 
 export default function BacklogClient({
   initialTickets,
-  currentUserDiscordId,
+  team,
 }: {
   initialTickets: TicketDTO[];
-  currentUserDiscordId: string;
+  team: TeamMember[];
 }) {
   const [tickets, setTickets] = useState<TicketDTO[]>(initialTickets);
   const [prevInitialTickets, setPrevInitialTickets] = useState(initialTickets);
-  const [workType, setWorkType] = useState<WorkType | "all">("all");
+  const [filters, setFilters] = useState<TicketFilterValues>(ALL_TICKET_FILTERS);
   const [editingTicket, setEditingTicket] = useState<TicketDTO | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
 
@@ -27,9 +33,11 @@ export default function BacklogClient({
     setTickets(initialTickets);
   }
 
+  const labelOptions = useMemo(() => collectLabels(tickets), [tickets]);
+
   const visible = useMemo(
-    () => (workType === "all" ? tickets : tickets.filter((t) => t.workType === workType)),
-    [tickets, workType],
+    () => tickets.filter((t) => matchesTicketFilters(t, filters)),
+    [tickets, filters],
   );
 
   function handleDelete(id: string) {
@@ -59,9 +67,9 @@ export default function BacklogClient({
 
   function handleSaved(saved: TicketDTO) {
     setTickets((prev) => {
-      const exists = prev.some((t) => t._id === saved._id);
-      if (!exists) return [...prev, saved];
-      return prev.map((t) => (t._id === saved._id ? saved : t));
+      const filtered = prev.filter((t) => t._id !== saved._id);
+      // The modal can change status too — only keep it here if it's still backlog.
+      return saved.status === "backlog" ? [...filtered, saved] : filtered;
     });
     setModalOpen(false);
   }
@@ -69,7 +77,12 @@ export default function BacklogClient({
   return (
     <div className="flex flex-col gap-3">
       <div className="flex items-center justify-between">
-        <WorkTypeFilter value={workType} onChange={setWorkType} />
+        <TicketFilters
+          values={filters}
+          onChange={setFilters}
+          team={team}
+          labelOptions={labelOptions}
+        />
         <button
           onClick={openCreate}
           className="rounded bg-zinc-900 px-3 py-1.5 text-sm font-medium text-white dark:bg-zinc-50 dark:text-zinc-900"
@@ -105,7 +118,7 @@ export default function BacklogClient({
       {modalOpen && (
         <TicketModal
           ticket={editingTicket}
-          currentUserDiscordId={currentUserDiscordId}
+          team={team}
           onClose={() => setModalOpen(false)}
           onSaved={handleSaved}
         />

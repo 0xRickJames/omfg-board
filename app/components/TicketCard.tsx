@@ -1,4 +1,5 @@
 import type { TicketDTO } from "@/lib/tickets";
+import { timeAgo, dueInfo } from "@/lib/format";
 
 export default function TicketCard({
   ticket,
@@ -11,6 +12,8 @@ export default function TicketCard({
   onOpen?: () => void;
   actions?: React.ReactNode;
 }) {
+  const due = dueInfo(ticket.dueDate);
+
   return (
     <div
       onClick={onOpen}
@@ -46,7 +49,17 @@ export default function TicketCard({
             {ticket.priority}
           </span>
         )}
+        <span className="ml-auto text-xs text-zinc-400" title="Time since created">
+          {timeAgo(ticket.createdAt)}
+        </span>
       </div>
+      {due && (
+        <span
+          className={`text-xs ${due.overdue ? "font-medium text-red-600 dark:text-red-400" : "text-zinc-400"}`}
+        >
+          {due.text}
+        </span>
+      )}
       {actions}
     </div>
   );
