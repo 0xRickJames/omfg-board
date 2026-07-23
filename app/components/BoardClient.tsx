@@ -269,14 +269,17 @@ export default function BoardClient({
 
   return (
     <div className="flex flex-1 flex-col gap-4 px-6 py-6">
-      <div className="flex items-center justify-between gap-2">
+      <div className="grid grid-cols-3 items-center gap-2">
         <TicketFilters
           values={filters}
           onChange={setFilters}
           team={team}
           labelOptions={labelOptions}
         />
-        <NewTicketButton team={team} />
+        <div className="flex justify-center">
+          <NewTicketButton team={team} />
+        </div>
+        <div />
       </div>
       <DndContext
         sensors={sensors}
