@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import type { TicketDTO } from "@/lib/tickets";
-import { STATUS_LABELS, type TicketStatus } from "@/lib/models";
+import { STATUS_LABELS, type TicketStatus, type Priority } from "@/lib/models";
 import type { TeamMember } from "@/lib/team";
 import { timeAgo, dueInfo } from "@/lib/format";
 import {
@@ -15,6 +15,8 @@ import TicketFilters from "@/app/components/TicketFilters";
 import TicketModal from "@/app/components/TicketModal";
 import MemberAvatar from "@/app/components/MemberAvatar";
 import NewTicketButton from "@/app/components/NewTicketButton";
+
+const PRIORITIES: Priority[] = ["none", "low", "med", "high", "urgent"];
 
 function patchTicket(id: string, body: Record<string, unknown>) {
   fetch(`/api/tickets/${id}`, {
@@ -110,6 +112,12 @@ export default function PlanningClient({
     const setList = list === "backlog" ? setBacklogTickets : setBoardTickets;
     setList((prev) => prev.map((t) => (t._id === id ? { ...t, isPublic } : t)));
     patchTicket(id, { isPublic });
+  }
+
+  function changePriority(id: string, priority: Priority, list: "backlog" | "board") {
+    const setList = list === "backlog" ? setBacklogTickets : setBoardTickets;
+    setList((prev) => prev.map((t) => (t._id === id ? { ...t, priority } : t)));
+    patchTicket(id, { priority });
   }
 
   function promoteToTask(id: string, list: "backlog" | "board") {
@@ -256,6 +264,20 @@ export default function PlanningClient({
                     />
                     Public
                   </label>
+                  <select
+                    value={ticket.priority}
+                    onClick={(e) => e.stopPropagation()}
+                    onChange={(e) =>
+                      changePriority(ticket._id, e.target.value as Priority, "backlog")
+                    }
+                    className="rounded border border-zinc-300 px-1.5 py-1 text-xs dark:border-zinc-700 dark:bg-zinc-800"
+                  >
+                    {PRIORITIES.map((p) => (
+                      <option key={p} value={p}>
+                        {p}
+                      </option>
+                    ))}
+                  </select>
                   {ticket.taskType === "Idea" && (
                     <button
                       onClick={(e) => {
@@ -375,6 +397,20 @@ export default function PlanningClient({
                     />
                     Public
                   </label>
+                  <select
+                    value={ticket.priority}
+                    onClick={(e) => e.stopPropagation()}
+                    onChange={(e) =>
+                      changePriority(ticket._id, e.target.value as Priority, "board")
+                    }
+                    className="rounded border border-zinc-300 px-1.5 py-1 text-xs dark:border-zinc-700 dark:bg-zinc-800"
+                  >
+                    {PRIORITIES.map((p) => (
+                      <option key={p} value={p}>
+                        {p}
+                      </option>
+                    ))}
+                  </select>
                   {ticket.taskType === "Idea" && (
                     <button
                       onClick={(e) => {
