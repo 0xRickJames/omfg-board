@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import type { TicketDTO } from "@/lib/tickets";
-import type { TicketStatus } from "@/lib/models";
+import { STATUS_LABELS, type TicketStatus } from "@/lib/models";
 import type { TeamMember } from "@/lib/team";
 import { timeAgo, dueInfo } from "@/lib/format";
 import {
@@ -13,15 +13,6 @@ import {
 } from "@/lib/ticketFilters";
 import TicketFilters from "@/app/components/TicketFilters";
 import TicketModal from "@/app/components/TicketModal";
-
-const STATUS_LABELS: Record<TicketStatus, string> = {
-  backlog: "Backlog",
-  todo: "To Do",
-  blocked: "Blocked",
-  in_progress: "In Progress",
-  testing: "Testing",
-  done: "Done",
-};
 
 function patchTicket(id: string, body: Record<string, unknown>) {
   fetch(`/api/tickets/${id}`, {

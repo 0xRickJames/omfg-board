@@ -20,6 +20,15 @@ export type TicketStatus =
 
 export type Priority = "none" | "low" | "med" | "high" | "urgent";
 
+export const STATUS_LABELS: Record<TicketStatus, string> = {
+  backlog: "Backlog",
+  todo: "To Do",
+  blocked: "Blocked",
+  in_progress: "In Progress",
+  testing: "Testing",
+  done: "Done",
+};
+
 export interface TicketLink {
   label: string;
   url: string;

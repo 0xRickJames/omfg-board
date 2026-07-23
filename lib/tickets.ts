@@ -2,6 +2,7 @@ import "server-only";
 import { ObjectId } from "mongodb";
 import { getDb } from "@/lib/mongodb";
 import type { Ticket, Counter, TicketStatus, WorkType } from "@/lib/models";
+import { notifyDiscordStatusChange } from "@/lib/discord";
 
 const KEY_PREFIX = "OMFG";
 
@@ -97,11 +98,36 @@ export async function moveTicket(
   if (!ObjectId.isValid(id)) return null;
   const db = await getDb();
   const tickets = db.collection<Ticket>("tickets");
-  return tickets.findOneAndUpdate(
+
+  const before = await tickets.findOne({ _id: new ObjectId(id) });
+  if (!before) return null;
+
+  const statusChanged = before.status !== status;
+  const set: Partial<Ticket> = { status, updatedAt: new Date() };
+  if (order !== undefined) {
+    set.order = order;
+  } else if (statusChanged) {
+    // Moved to a new column with no explicit position (e.g. from the
+    // Planning checklist) — append to the end. If status didn't change and
+    // no order was given (e.g. the edit modal saving unrelated fields),
+    // leave the ticket's position alone.
+    set.order = Date.now();
+  }
+
+  const after = await tickets.findOneAndUpdate(
     { _id: new ObjectId(id) },
-    { $set: { status, order: order ?? Date.now(), updatedAt: new Date() } },
+    { $set: set },
     { returnDocument: "after" },
   );
+  if (!after) return null;
+
+  if (statusChanged && before.isPublic) {
+    notifyDiscordStatusChange(after, before.status).catch((err) => {
+      console.error("Discord webhook failed", err);
+    });
+  }
+
+  return after;
 }
 
 export interface UpdateTicketInput {

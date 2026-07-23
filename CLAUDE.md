@@ -103,11 +103,14 @@ are pulled live from the `users` collection (populated on first login) via
 `getTeamWithAvatars()`. The ticket modal's owners field is a multi-select of
 these 5 people (avatar + name), not free-text Discord IDs.
 
-### Phase 5 — Discord publish on public moves
-When a ticket with `isPublic: true` changes status ("moved on the board"),
-fire a Discord webhook to a channel. `isPublic` defaults false. Webhook URL in
-env. No bot needed — just the webhook. Mirrors the old Jira `public` label
-behavior.
+### Phase 5 — Discord publish on public moves (DONE)
+`lib/discord.ts`, called from `moveTicket()` — when a ticket with
+`isPublic: true` changes status, POST an embed to `DISCORD_WEBHOOK_URL`:
+title `Ticket {key}`, a Description field showing the ticket's *title*, a
+Type field, a Status Change field (each its own row, no inline columns),
+green accent color, and an Omnipair-branded footer (icon + timestamp).
+Fire-and-forget — a webhook failure is logged but never fails the request.
+No bot needed — just the webhook.
 
 ### Phase 6 — GitHub auto-move (convention-based)
 Dev puts the ticket key in the branch or PR title (e.g. `OMFG-42-fix-thing`).
