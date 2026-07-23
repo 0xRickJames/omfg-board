@@ -112,12 +112,18 @@ green accent color, and an Omnipair-branded footer (icon + timestamp).
 Fire-and-forget — a webhook failure is logged but never fails the request.
 No bot needed — just the webhook.
 
-### Phase 6 — GitHub auto-move (convention-based)
-Dev puts the ticket key in the branch or PR title (e.g. `OMFG-42-fix-thing`).
-A GitHub webhook hits the app on PR events:
-- PR OMFGened → move ticket to In Progress
+### Phase 6 — GitHub auto-move (convention-based) (DONE)
+`POST /api/webhooks/github` — verifies GitHub's `X-Hub-Signature-256` HMAC
+against `GITHUB_WEBHOOK_SECRET` (timing-safe compare over the raw body),
+then reads the `OMFG-###` key out of the PR title or branch name
+(`lib/github.ts`):
+- PR opened → move ticket to In Progress
 - PR merged → move ticket to Testing
-POMFGulate `githubRef` on match. No per-repo config.
+Populates `githubRef` on match. Genuinely no per-repo config — the route
+doesn't care which repo sent the event, so each (possibly private) repo
+just needs its own webhook pointed at this same URL with the same secret.
+`proxy.ts`'s matcher excludes `api/webhooks/*` since these requests carry
+no session, only their own signature.
 
 ### Phase 7 — Jira migration (one-time script, run last)
 

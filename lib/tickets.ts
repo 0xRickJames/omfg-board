@@ -1,7 +1,7 @@
 import "server-only";
 import { ObjectId } from "mongodb";
 import { getDb } from "@/lib/mongodb";
-import type { Ticket, Counter, TicketStatus, WorkType } from "@/lib/models";
+import type { Ticket, Counter, TicketStatus, WorkType, GithubRef } from "@/lib/models";
 import { notifyDiscordStatusChange } from "@/lib/discord";
 
 const KEY_PREFIX = "OMFG";
@@ -81,6 +81,12 @@ export async function listTickets(
   return tickets.find(filter).sort({ order: 1 }).toArray();
 }
 
+export async function getTicketByKey(key: string): Promise<Ticket | null> {
+  const db = await getDb();
+  const tickets = db.collection<Ticket>("tickets");
+  return tickets.findOne({ key });
+}
+
 export interface MoveTicketInput {
   status: TicketStatus;
   /** Omit to append the ticket to the end of its new column. */
@@ -128,6 +134,21 @@ export async function moveTicket(
   }
 
   return after;
+}
+
+/** Populates a ticket's GitHub PR reference — set by the GitHub webhook on match. */
+export async function setGithubRef(
+  id: string,
+  githubRef: GithubRef,
+): Promise<Ticket | null> {
+  if (!ObjectId.isValid(id)) return null;
+  const db = await getDb();
+  const tickets = db.collection<Ticket>("tickets");
+  return tickets.findOneAndUpdate(
+    { _id: new ObjectId(id) },
+    { $set: { githubRef, updatedAt: new Date() } },
+    { returnDocument: "after" },
+  );
 }
 
 export interface UpdateTicketInput {

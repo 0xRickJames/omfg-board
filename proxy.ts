@@ -14,5 +14,6 @@ export const proxy = auth((req) => {
 });
 
 export const config = {
-  matcher: ["/((?!api/auth|_next/static|_next/image|favicon.ico).*)"],
+  // api/webhooks/* verify their own signature (GitHub, etc.) — no session exists for them.
+  matcher: ["/((?!api/auth|api/webhooks|_next/static|_next/image|favicon.ico).*)"],
 };
