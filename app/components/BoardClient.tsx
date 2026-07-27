@@ -115,7 +115,7 @@ function Column({
   const { setNodeRef } = useDroppable({ id: status });
 
   return (
-    <div className="flex min-h-40 flex-1 flex-col gap-2 rounded-lg bg-zinc-50 p-3 dark:bg-zinc-900/50">
+    <div className="flex min-h-40 w-72 shrink-0 flex-1 flex-col gap-2 rounded-lg bg-zinc-50 p-3 sm:w-auto dark:bg-zinc-900/50">
       <h2 className="text-xs font-semibold uppercase tracking-wide text-zinc-500">
         {COLUMN_LABELS[status]} · {tickets.length}
       </h2>
@@ -268,18 +268,18 @@ export default function BoardClient({
   }
 
   return (
-    <div className="flex flex-1 flex-col gap-4 px-6 py-6">
-      <div className="grid grid-cols-3 items-center gap-2">
+    <div className="flex flex-1 flex-col gap-4 px-4 py-6 sm:px-6">
+      <div className="flex flex-col gap-3 sm:grid sm:grid-cols-3 sm:items-center sm:gap-2">
         <TicketFilters
           values={filters}
           onChange={setFilters}
           team={team}
           labelOptions={labelOptions}
         />
-        <div className="flex justify-center">
+        <div className="flex justify-start sm:justify-center">
           <NewTicketButton team={team} />
         </div>
-        <div />
+        <div className="hidden sm:block" />
       </div>
       <DndContext
         sensors={sensors}
@@ -287,7 +287,7 @@ export default function BoardClient({
         onDragStart={handleDragStart}
         onDragEnd={handleDragEnd}
       >
-        <div className="flex flex-1 gap-4">
+        <div className="flex flex-1 gap-4 overflow-x-auto pb-2">
           {COLUMN_ORDER.map((status) => (
             <Column
               key={status}

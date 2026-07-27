@@ -9,7 +9,7 @@ export default async function BacklogPage() {
   ]);
 
   return (
-    <div className="mx-auto flex w-full max-w-3xl flex-1 flex-col gap-6 px-6 py-6">
+    <div className="mx-auto flex w-full max-w-3xl flex-1 flex-col gap-6 px-4 py-6 sm:px-6">
       <h1 className="text-xl font-semibold">Backlog</h1>
       <BacklogClient initialTickets={tickets.map(toTicketDTO)} team={team} />
     </div>

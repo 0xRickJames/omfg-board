@@ -335,19 +335,31 @@ export default function TicketModal({
               </button>
             </div>
             {links.map((link, i) => (
-              <div key={i} className="flex gap-2">
+              <div key={i} className="flex flex-wrap gap-2 sm:flex-nowrap">
                 <input
                   value={link.label}
                   onChange={(e) => updateLink(i, "label", e.target.value)}
                   placeholder="Label"
-                  className="w-1/3 rounded border border-zinc-300 px-2 py-1.5 text-sm dark:border-zinc-700 dark:bg-zinc-800"
+                  className="w-full rounded border border-zinc-300 px-2 py-1.5 text-sm dark:border-zinc-700 dark:bg-zinc-800 sm:w-1/3"
                 />
                 <input
                   value={link.url}
                   onChange={(e) => updateLink(i, "url", e.target.value)}
                   placeholder="https://..."
-                  className="flex-1 rounded border border-zinc-300 px-2 py-1.5 text-sm dark:border-zinc-700 dark:bg-zinc-800"
+                  className="min-w-0 flex-1 rounded border border-zinc-300 px-2 py-1.5 text-sm dark:border-zinc-700 dark:bg-zinc-800"
                 />
+                {link.url.trim() && (
+                  <a
+                    href={link.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100"
+                    aria-label={`Open ${link.label || link.url}`}
+                    title="Open link"
+                  >
+                    ↗
+                  </a>
+                )}
                 <button
                   type="button"
                   onClick={() => removeLink(i)}

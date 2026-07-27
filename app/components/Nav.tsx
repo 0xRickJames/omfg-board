@@ -5,8 +5,8 @@ import ThemeToggle from "@/app/components/ThemeToggle";
 
 export default function Nav({ session }: { session: Session | null }) {
   return (
-    <header className="flex items-center justify-between border-b border-zinc-200 px-6 py-3 dark:border-zinc-800">
-      <nav className="flex items-center gap-4 text-sm font-medium">
+    <header className="flex flex-col gap-2 border-b border-zinc-200 px-4 py-3 sm:flex-row sm:items-center sm:justify-between sm:px-6 dark:border-zinc-800">
+      <nav className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm font-medium">
         <span className="font-semibold">OMFGBoard</span>
         <Link href="/" className="text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100">
           Board
@@ -23,9 +23,9 @@ export default function Nav({ session }: { session: Session | null }) {
           </Link>
         )}
       </nav>
-      <div className="flex items-center gap-3 text-sm text-zinc-500">
+      <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-zinc-500">
         {session?.user && (
-          <span>
+          <span className="truncate">
             {session.user.name} ({session.user.role})
           </span>
         )}

@@ -156,14 +156,14 @@ export default function PlanningClient({
   }
 
   return (
-    <div className="mx-auto flex w-full max-w-5xl flex-1 flex-col gap-4 px-6 py-6">
+    <div className="mx-auto flex w-full max-w-5xl flex-1 flex-col gap-4 px-4 py-6 sm:px-6">
       <h1 className="text-xl font-semibold">Planning</h1>
       <p className="text-sm text-zinc-500">
         Go down each column and add, block, or otherwise update tickets. No sprint
         planning meeting required.
       </p>
 
-      <div className="flex items-center justify-between gap-2">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <TicketFilters
           values={filters}
           onChange={setFilters}
@@ -173,7 +173,7 @@ export default function PlanningClient({
         <NewTicketButton team={team} />
       </div>
 
-      <div className="grid flex-1 grid-cols-2 gap-4">
+      <div className="grid flex-1 grid-cols-1 gap-4 md:grid-cols-2">
         <section className="flex flex-col gap-2">
           <h2 className="text-sm font-semibold uppercase tracking-wide text-zinc-500">
             Backlog · {visibleBacklog.length}

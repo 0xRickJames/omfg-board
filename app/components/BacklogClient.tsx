@@ -76,7 +76,7 @@ export default function BacklogClient({
 
   return (
     <div className="flex flex-col gap-3">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <TicketFilters
           values={filters}
           onChange={setFilters}
@@ -85,7 +85,7 @@ export default function BacklogClient({
         />
         <button
           onClick={openCreate}
-          className="rounded bg-zinc-900 px-3 py-1.5 text-sm font-medium text-white dark:bg-zinc-50 dark:text-zinc-900"
+          className="self-start rounded bg-zinc-900 px-3 py-1.5 text-sm font-medium text-white dark:bg-zinc-50 dark:text-zinc-900"
         >
           + New ticket
         </button>

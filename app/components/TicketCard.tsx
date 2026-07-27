@@ -82,6 +82,21 @@ export default function TicketCard({
           {due.text}
         </span>
       )}
+      {ticket.links.length > 0 && (
+        <div className="flex flex-wrap gap-2" onClick={(e) => e.stopPropagation()}>
+          {ticket.links.map((link, i) => (
+            <a
+              key={i}
+              href={link.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="truncate text-xs text-blue-600 underline hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300"
+            >
+              {link.label || link.url}
+            </a>
+          ))}
+        </div>
+      )}
       {actions}
     </div>
   );
