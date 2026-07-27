@@ -27,9 +27,20 @@ export interface DueInfo {
 /** "Due in 3d" / "Due today" / "Overdue by 2d", or null if there's no due date. */
 export function dueInfo(dueDate: string | null, now: number = Date.now()): DueInfo | null {
   if (!dueDate) return null;
-  const due = new Date(dueDate).getTime();
+
+  // dueDate is a plain "YYYY-MM-DD" string with no time/zone component.
+  // Compare calendar days in the viewer's own local timezone rather than
+  // raw timestamps — `new Date("YYYY-MM-DD")` parses as UTC midnight, which
+  // drifts a day off from "now" for anyone behind UTC (a ticket due
+  // "tomorrow" could read as overdue once it's evening locally).
+  const [year, month, day] = dueDate.split("-").map(Number);
+  const due = new Date(year, month - 1, day); // local midnight on the due date
+
+  const today = new Date(now);
+  today.setHours(0, 0, 0, 0); // local midnight today
+
   const dayMs = 1000 * 60 * 60 * 24;
-  const diffDays = Math.round((due - now) / dayMs);
+  const diffDays = Math.round((due.getTime() - today.getTime()) / dayMs);
 
   if (diffDays < 0) {
     return { text: `Overdue by ${Math.abs(diffDays)}d`, overdue: true };
