@@ -8,6 +8,7 @@ export const TEAM_ROSTER = [
   { discordId: "967378400257933312", name: "Haz" },
   { discordId: "1237545047260528641", name: "Ivan" },
   { discordId: "236508020341866497", name: "Zee" },
+  { discordId: "819925149393485835", name: "Olesia" },
 ] as const;
 
 export interface TeamMember {
