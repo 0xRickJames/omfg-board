@@ -66,6 +66,10 @@ export interface Ticket {
   isPublic: boolean;
   githubRef: GithubRef | null;
   comments: Comment[];
+  /** Set when status transitions to "done", cleared if it moves off done again.
+   *  Distinct from updatedAt, which changes on any edit — this is what the
+   *  Board's "hide done after a week" rule keys off. */
+  doneAt: Date | null;
   order: number;
   createdAt: Date;
   updatedAt: Date;

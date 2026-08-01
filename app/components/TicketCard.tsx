@@ -16,7 +16,7 @@ export default function TicketCard({
   onOpen?: () => void;
   actions?: React.ReactNode;
 }) {
-  const due = dueInfo(ticket.dueDate);
+  const due = dueInfo(ticket.dueDate, ticket.status);
   const owners = ticket.owners
     .map((id) => team.find((m) => m.discordId === id))
     .filter((m): m is TeamMember => Boolean(m));

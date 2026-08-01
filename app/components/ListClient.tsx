@@ -165,7 +165,7 @@ export default function ListClient({
           </thead>
           <tbody>
             {visible.map((ticket) => {
-              const due = dueInfo(ticket.dueDate);
+              const due = dueInfo(ticket.dueDate, ticket.status);
               const owners = ticket.owners
                 .map((id) => team.find((m) => m.discordId === id))
                 .filter((m): m is TeamMember => Boolean(m));

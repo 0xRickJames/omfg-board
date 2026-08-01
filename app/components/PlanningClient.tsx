@@ -182,7 +182,7 @@ export default function PlanningClient({
             <p className="text-sm text-zinc-500">Nothing here.</p>
           )}
           {visibleBacklog.map((ticket) => {
-            const due = dueInfo(ticket.dueDate);
+            const due = dueInfo(ticket.dueDate, ticket.status);
             const owners = ownersOf(ticket);
             return (
               <div
@@ -312,7 +312,7 @@ export default function PlanningClient({
             <p className="text-sm text-zinc-500">Nothing here.</p>
           )}
           {visibleBoard.map((ticket) => {
-            const due = dueInfo(ticket.dueDate);
+            const due = dueInfo(ticket.dueDate, ticket.status);
             const owners = ownersOf(ticket);
             return (
               <div

@@ -60,6 +60,7 @@ export async function createTicket(
     isPublic: input.isPublic ?? false,
     githubRef: null,
     comments: [],
+    doneAt: input.status === "done" ? now : null,
     order: Date.now(),
     createdAt: now,
     updatedAt: now,
@@ -120,6 +121,11 @@ export async function moveTicket(
     // no order was given (e.g. the edit modal saving unrelated fields),
     // leave the ticket's position alone.
     set.order = Date.now();
+  }
+  if (statusChanged) {
+    // Track when it entered/left done separately from updatedAt, which
+    // changes on any edit — see the Board's "hide done after a week" rule.
+    set.doneAt = status === "done" ? new Date() : null;
   }
 
   const after = await tickets.findOneAndUpdate(
@@ -232,11 +238,12 @@ export type CommentDTO = Omit<Comment, "createdAt"> & { createdAt: string };
 
 // Plain-JSON shape for passing tickets from Server to Client Components
 // (ObjectId isn't a serializable RSC prop type).
-export type TicketDTO = Omit<Ticket, "_id" | "createdAt" | "updatedAt" | "comments"> & {
+export type TicketDTO = Omit<Ticket, "_id" | "createdAt" | "updatedAt" | "comments" | "doneAt"> & {
   _id: string;
   createdAt: string;
   updatedAt: string;
   comments: CommentDTO[];
+  doneAt: string | null;
 };
 
 export function toTicketDTO(t: Ticket): TicketDTO {
@@ -247,5 +254,6 @@ export function toTicketDTO(t: Ticket): TicketDTO {
     updatedAt: t.updatedAt.toISOString(),
     // Tickets seeded before comments existed won't have the field at all.
     comments: (t.comments ?? []).map((c) => ({ ...c, createdAt: c.createdAt.toISOString() })),
+    doneAt: t.doneAt ? t.doneAt.toISOString() : null,
   };
 }

@@ -1,3 +1,5 @@
+import type { TicketStatus } from "@/lib/models";
+
 const UNITS: [Intl.RelativeTimeFormatUnit, number][] = [
   ["year", 1000 * 60 * 60 * 24 * 365],
   ["month", 1000 * 60 * 60 * 24 * 30],
@@ -24,9 +26,16 @@ export interface DueInfo {
   overdue: boolean;
 }
 
-/** "Due in 3d" / "Due today" / "Overdue by 2d", or null if there's no due date. */
-export function dueInfo(dueDate: string | null, now: number = Date.now()): DueInfo | null {
-  if (!dueDate) return null;
+/**
+ * "Due in 3d" / "Due today" / "Overdue by 2d", or null if there's no due
+ * date — or the ticket is done. A done ticket can't be overdue.
+ */
+export function dueInfo(
+  dueDate: string | null,
+  status: TicketStatus,
+  now: number = Date.now(),
+): DueInfo | null {
+  if (!dueDate || status === "done") return null;
 
   // dueDate is a plain "YYYY-MM-DD" string with no time/zone component.
   // Compare calendar days in the viewer's own local timezone rather than

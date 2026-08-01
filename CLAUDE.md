@@ -191,6 +191,33 @@ Do NOT run this until Phases 1–3 exist and the schema is stable.
 
 ## Post-launch improvements (beyond the original 7 phases)
 
+- **Done means done**: `Ticket.doneAt` (set when status transitions to
+  `done`, cleared if it moves back off `done`) is tracked separately from
+  `updatedAt`, which changes on any edit and would otherwise reset the
+  clock. Two things key off it: `lib/format.ts`'s `dueInfo()` now takes the
+  ticket's status and always returns `null` for `done` tickets — a
+  completed ticket can never show as overdue. And the Board page
+  (`app/page.tsx`) filters `done` tickets older than a week out of what it
+  sends to `BoardClient`, so completed work stops cluttering the active
+  view; `/list` still shows everything regardless of age, so nothing is
+  actually hidden/lost, just off the Board.
+- **Clickable links**: `TicketCard` renders each ticket's `links` as
+  clickable text (only when any exist); the modal's link editor got a small
+  ↗ open-in-new-tab affordance next to each row.
+- **Mobile-responsive layout**: Nav wraps/stacks on narrow screens, Board's
+  columns scroll horizontally instead of squeezing unreadably thin,
+  Planning's two-column grid collapses to one column below `md`, and every
+  page's filter-bar+action-button header row stacks vertically on mobile.
+- **Modal never closes on an outside click**: an accidental backdrop click
+  used to silently discard an in-progress edit with no way back. Now only
+  Cancel/✕ or a successful save closes it.
+- **Due-date timezone fix**: `dueInfo()` used to parse the plain
+  `YYYY-MM-DD` `dueDate` as UTC midnight (per the JS spec for date-only
+  strings) and diff it against a raw `Date.now()` — anyone behind UTC could
+  see a same-day-due ticket marked overdue once it got late enough locally.
+  Now compares calendar days in the viewer's own local timezone instead
+  (this only ever runs client-side, so it's correctly per-viewer with no
+  server config needed).
 - **Delete everywhere**: every ticket surface (Board, Backlog, Planning rows,
   List) has its own Delete button, not just Idea rows.
 - **New ticket everywhere**: `NewTicketButton` (shared, self-contained —
