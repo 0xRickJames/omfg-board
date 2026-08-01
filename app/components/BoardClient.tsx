@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
 import {
   DndContext,
   DragOverlay,
@@ -28,7 +29,6 @@ import {
 } from "@/lib/ticketFilters";
 import TicketCard from "@/app/components/TicketCard";
 import TicketFilters from "@/app/components/TicketFilters";
-import TicketModal from "@/app/components/TicketModal";
 import NewTicketButton from "@/app/components/NewTicketButton";
 
 type BoardStatus = "todo" | "blocked" | "in_progress" | "testing" | "done";
@@ -146,13 +146,17 @@ export default function BoardClient({
   initialTickets: TicketDTO[];
   team: TeamMember[];
 }) {
+  const router = useRouter();
   const [columns, setColumns] = useState<Record<BoardStatus, TicketDTO[]>>(() =>
     groupByColumn(initialTickets),
   );
   const [prevInitialTickets, setPrevInitialTickets] = useState(initialTickets);
   const [filters, setFilters] = useState<TicketFilterValues>(ALL_TICKET_FILTERS);
   const [activeId, setActiveId] = useState<string | null>(null);
-  const [editingTicket, setEditingTicket] = useState<TicketDTO | null>(null);
+
+  function openTicket(ticket: TicketDTO) {
+    router.push(`/tickets/${ticket.key}`);
+  }
 
   // initialTickets comes from a fresh server fetch on every router.refresh()
   // (e.g. after creating a ticket) — resync local state when it changes.
@@ -250,23 +254,6 @@ export default function BoardClient({
     fetch(`/api/tickets/${id}`, { method: "DELETE" });
   }
 
-  function handleSaved(saved: TicketDTO) {
-    setColumns((prev) => {
-      const next = {} as Record<BoardStatus, TicketDTO[]>;
-      for (const status of COLUMN_ORDER) {
-        next[status] = prev[status].filter((t) => t._id !== saved._id);
-      }
-      // The modal can change status too (e.g. to "backlog") — relocate the
-      // ticket to its new column, or drop it if it's left the board entirely.
-      if ((COLUMN_ORDER as string[]).includes(saved.status)) {
-        const col = saved.status as BoardStatus;
-        next[col] = [...next[col], saved].sort((a, b) => a.order - b.order);
-      }
-      return next;
-    });
-    setEditingTicket(null);
-  }
-
   return (
     <div className="flex flex-1 flex-col gap-4 px-4 py-6 sm:px-6">
       <div className="flex flex-col gap-3 sm:grid sm:grid-cols-3 sm:items-center sm:gap-2">
@@ -295,7 +282,7 @@ export default function BoardClient({
               tickets={filteredColumns[status]}
               team={team}
               onDelete={handleDelete}
-              onOpen={setEditingTicket}
+              onOpen={openTicket}
             />
           ))}
         </div>
@@ -305,14 +292,6 @@ export default function BoardClient({
           ) : null}
         </DragOverlay>
       </DndContext>
-      {editingTicket && (
-        <TicketModal
-          ticket={editingTicket}
-          team={team}
-          onClose={() => setEditingTicket(null)}
-          onSaved={handleSaved}
-        />
-      )}
     </div>
   );
 }

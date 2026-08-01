@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
 import type { TicketDTO } from "@/lib/tickets";
 import type { TeamMember } from "@/lib/team";
 import {
@@ -20,10 +21,10 @@ export default function BacklogClient({
   initialTickets: TicketDTO[];
   team: TeamMember[];
 }) {
+  const router = useRouter();
   const [tickets, setTickets] = useState<TicketDTO[]>(initialTickets);
   const [prevInitialTickets, setPrevInitialTickets] = useState(initialTickets);
   const [filters, setFilters] = useState<TicketFilterValues>(ALL_TICKET_FILTERS);
-  const [editingTicket, setEditingTicket] = useState<TicketDTO | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
 
   // initialTickets comes from a fresh server fetch on every router.refresh()
@@ -56,13 +57,11 @@ export default function BacklogClient({
   }
 
   function openCreate() {
-    setEditingTicket(null);
     setModalOpen(true);
   }
 
   function openEdit(ticket: TicketDTO) {
-    setEditingTicket(ticket);
-    setModalOpen(true);
+    router.push(`/tickets/${ticket.key}`);
   }
 
   function handleSaved(saved: TicketDTO) {
@@ -118,7 +117,7 @@ export default function BacklogClient({
       </ul>
       {modalOpen && (
         <TicketModal
-          ticket={editingTicket}
+          ticket={null}
           team={team}
           onClose={() => setModalOpen(false)}
           onSaved={handleSaved}

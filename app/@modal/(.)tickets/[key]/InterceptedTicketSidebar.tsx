@@ -3,9 +3,9 @@
 import { useRouter } from "next/navigation";
 import type { TicketDTO } from "@/lib/tickets";
 import type { TeamMember } from "@/lib/team";
-import TicketModal from "@/app/components/TicketModal";
+import TicketSidebar from "@/app/components/TicketSidebar";
 
-export default function InterceptedTicketModal({
+export default function InterceptedTicketSidebar({
   ticket,
   team,
 }: {
@@ -15,7 +15,7 @@ export default function InterceptedTicketModal({
   const router = useRouter();
 
   return (
-    <TicketModal
+    <TicketSidebar
       ticket={ticket}
       team={team}
       onClose={() => router.back()}

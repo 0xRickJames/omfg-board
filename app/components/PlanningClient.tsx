@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import type { TicketDTO } from "@/lib/tickets";
 import { STATUS_LABELS, type TicketStatus, type Priority } from "@/lib/models";
 import type { TeamMember } from "@/lib/team";
@@ -13,7 +14,6 @@ import {
   type TicketFilterValues,
 } from "@/lib/ticketFilters";
 import TicketFilters from "@/app/components/TicketFilters";
-import TicketModal from "@/app/components/TicketModal";
 import MemberAvatar from "@/app/components/MemberAvatar";
 import NewTicketButton from "@/app/components/NewTicketButton";
 
@@ -36,13 +36,17 @@ export default function PlanningClient({
   initialBoardTickets: TicketDTO[];
   team: TeamMember[];
 }) {
+  const router = useRouter();
   const [backlogTickets, setBacklogTickets] = useState(initialBacklogTickets);
   const [boardTickets, setBoardTickets] = useState(initialBoardTickets);
   const [prevInitialBacklog, setPrevInitialBacklog] = useState(initialBacklogTickets);
   const [prevInitialBoard, setPrevInitialBoard] = useState(initialBoardTickets);
   const [filters, setFilters] = useState<TicketFilterValues>(ALL_TICKET_FILTERS);
-  const [editingTicket, setEditingTicket] = useState<TicketDTO | null>(null);
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
+
+  function openTicket(ticket: TicketDTO) {
+    router.push(`/tickets/${ticket.key}`);
+  }
 
   // initialBacklogTickets/initialBoardTickets come from a fresh server fetch
   // on every router.refresh() (e.g. after creating a ticket) — resync local
@@ -140,22 +144,6 @@ export default function PlanningClient({
       .filter((m): m is TeamMember => Boolean(m));
   }
 
-  function handleSaved(saved: TicketDTO) {
-    // The modal can change status too — relocate the ticket between the
-    // backlog/board columns (or drop it from both if it's now "done").
-    setBacklogTickets((prev) => {
-      const filtered = prev.filter((t) => t._id !== saved._id);
-      return saved.status === "backlog" ? [...filtered, saved] : filtered;
-    });
-    setBoardTickets((prev) => {
-      const filtered = prev.filter((t) => t._id !== saved._id);
-      return saved.status !== "backlog" && saved.status !== "done"
-        ? [...filtered, saved]
-        : filtered;
-    });
-    setEditingTicket(null);
-  }
-
   return (
     <div className="mx-auto flex w-full max-w-5xl flex-1 flex-col gap-4 px-4 py-6 sm:px-6">
       <h1 className="text-xl font-semibold">Planning</h1>
@@ -188,7 +176,7 @@ export default function PlanningClient({
             return (
               <div
                 key={ticket._id}
-                onClick={() => setEditingTicket(ticket)}
+                onClick={() => openTicket(ticket)}
                 className="flex cursor-pointer flex-col gap-2 rounded border border-zinc-200 px-4 py-2 text-sm dark:border-zinc-800"
               >
                 <div className="flex items-center gap-2">
@@ -324,7 +312,7 @@ export default function PlanningClient({
             return (
               <div
                 key={ticket._id}
-                onClick={() => setEditingTicket(ticket)}
+                onClick={() => openTicket(ticket)}
                 className="flex cursor-pointer flex-col gap-2 rounded border border-zinc-200 px-4 py-2 text-sm dark:border-zinc-800"
               >
                 <div className="flex items-center gap-2">
@@ -450,15 +438,6 @@ export default function PlanningClient({
           })}
         </section>
       </div>
-
-      {editingTicket && (
-        <TicketModal
-          ticket={editingTicket}
-          team={team}
-          onClose={() => setEditingTicket(null)}
-          onSaved={handleSaved}
-        />
-      )}
     </div>
   );
 }

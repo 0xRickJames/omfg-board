@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import type { TicketDTO } from "@/lib/tickets";
 import { STATUS_LABELS, type Priority } from "@/lib/models";
 import type { TeamMember } from "@/lib/team";
@@ -13,7 +14,6 @@ import {
   type TicketFilterValues,
 } from "@/lib/ticketFilters";
 import TicketFilters from "@/app/components/TicketFilters";
-import TicketModal from "@/app/components/TicketModal";
 import MemberAvatar from "@/app/components/MemberAvatar";
 import NewTicketButton from "@/app/components/NewTicketButton";
 
@@ -87,12 +87,12 @@ export default function ListClient({
   initialTickets: TicketDTO[];
   team: TeamMember[];
 }) {
+  const router = useRouter();
   const [tickets, setTickets] = useState(initialTickets);
   const [prevInitialTickets, setPrevInitialTickets] = useState(initialTickets);
   const [filters, setFilters] = useState<TicketFilterValues>(ALL_TICKET_FILTERS);
   const [sortField, setSortField] = useState<SortField>("createdAt");
   const [sortDirection, setSortDirection] = useState<SortDirection>("desc");
-  const [editingTicket, setEditingTicket] = useState<TicketDTO | null>(null);
 
   // initialTickets comes from a fresh server fetch on every router.refresh()
   // (e.g. after creating a ticket) — resync local state when it changes.
@@ -125,11 +125,6 @@ export default function ListClient({
     if (!confirm(`Delete ${key}? This can't be undone.`)) return;
     setTickets((prev) => prev.filter((t) => t._id !== id));
     fetch(`/api/tickets/${id}`, { method: "DELETE" });
-  }
-
-  function handleSaved(saved: TicketDTO) {
-    setTickets((prev) => prev.map((t) => (t._id === saved._id ? saved : t)));
-    setEditingTicket(null);
   }
 
   return (
@@ -173,7 +168,7 @@ export default function ListClient({
               return (
                 <tr
                   key={ticket._id}
-                  onClick={() => setEditingTicket(ticket)}
+                  onClick={() => router.push(`/tickets/${ticket.key}`)}
                   className="cursor-pointer border-b border-zinc-100 hover:bg-zinc-50 dark:border-zinc-800 dark:hover:bg-zinc-900/50"
                 >
                   <td className="px-3 py-2 font-mono text-xs text-zinc-500">
@@ -229,15 +224,6 @@ export default function ListClient({
           <p className="p-4 text-sm text-zinc-500">Nothing matches these filters.</p>
         )}
       </div>
-
-      {editingTicket && (
-        <TicketModal
-          ticket={editingTicket}
-          team={team}
-          onClose={() => setEditingTicket(null)}
-          onSaved={handleSaved}
-        />
-      )}
     </div>
   );
 }
