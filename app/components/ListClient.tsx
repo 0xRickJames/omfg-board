@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import Link from "next/link";
 import type { TicketDTO } from "@/lib/tickets";
 import { STATUS_LABELS, type Priority } from "@/lib/models";
 import type { TeamMember } from "@/lib/team";
@@ -175,7 +176,15 @@ export default function ListClient({
                   onClick={() => setEditingTicket(ticket)}
                   className="cursor-pointer border-b border-zinc-100 hover:bg-zinc-50 dark:border-zinc-800 dark:hover:bg-zinc-900/50"
                 >
-                  <td className="px-3 py-2 font-mono text-xs text-zinc-500">{ticket.key}</td>
+                  <td className="px-3 py-2 font-mono text-xs text-zinc-500">
+                    <Link
+                      href={`/tickets/${ticket.key}`}
+                      onClick={(e) => e.stopPropagation()}
+                      className="hover:underline"
+                    >
+                      {ticket.key}
+                    </Link>
+                  </td>
                   <td className="max-w-xs truncate px-3 py-2">{ticket.title}</td>
                   <td className="px-3 py-2">{ticket.workType === "none" ? "—" : ticket.workType}</td>
                   <td className="px-3 py-2">{ticket.taskType}</td>

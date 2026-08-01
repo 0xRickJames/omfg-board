@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import Link from "next/link";
 import type { TicketDTO } from "@/lib/tickets";
 import { STATUS_LABELS, type TicketStatus, type Priority } from "@/lib/models";
 import type { TeamMember } from "@/lib/team";
@@ -191,7 +192,13 @@ export default function PlanningClient({
                 className="flex cursor-pointer flex-col gap-2 rounded border border-zinc-200 px-4 py-2 text-sm dark:border-zinc-800"
               >
                 <div className="flex items-center gap-2">
-                  <span className="font-mono text-xs text-zinc-500">{ticket.key}</span>
+                  <Link
+                    href={`/tickets/${ticket.key}`}
+                    onClick={(e) => e.stopPropagation()}
+                    className="font-mono text-xs text-zinc-500 hover:underline"
+                  >
+                    {ticket.key}
+                  </Link>
                   {owners.length > 0 && (
                     <div className="flex -space-x-1.5">
                       {owners.map((member) => (
@@ -321,7 +328,13 @@ export default function PlanningClient({
                 className="flex cursor-pointer flex-col gap-2 rounded border border-zinc-200 px-4 py-2 text-sm dark:border-zinc-800"
               >
                 <div className="flex items-center gap-2">
-                  <span className="font-mono text-xs text-zinc-500">{ticket.key}</span>
+                  <Link
+                    href={`/tickets/${ticket.key}`}
+                    onClick={(e) => e.stopPropagation()}
+                    className="font-mono text-xs text-zinc-500 hover:underline"
+                  >
+                    {ticket.key}
+                  </Link>
                   {owners.length > 0 && (
                     <div className="flex -space-x-1.5">
                       {owners.map((member) => (

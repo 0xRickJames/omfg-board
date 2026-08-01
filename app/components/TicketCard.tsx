@@ -1,3 +1,4 @@
+import Link from "next/link";
 import type { TicketDTO } from "@/lib/tickets";
 import type { TeamMember } from "@/lib/team";
 import { timeAgo, dueInfo } from "@/lib/format";
@@ -30,7 +31,13 @@ export default function TicketCard({
     >
       <div className="flex items-start justify-between gap-2">
         <div className="flex items-center gap-1.5">
-          <span className="font-mono text-xs text-zinc-500">{ticket.key}</span>
+          <Link
+            href={`/tickets/${ticket.key}`}
+            onClick={(e) => e.stopPropagation()}
+            className="font-mono text-xs text-zinc-500 hover:underline"
+          >
+            {ticket.key}
+          </Link>
           {owners.length > 0 && (
             <div className="flex -space-x-1.5">
               {owners.map((member) => (

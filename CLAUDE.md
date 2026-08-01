@@ -243,6 +243,22 @@ Do NOT run this until Phases 1–3 exist and the schema is stable.
   (edit mode only — a ticket needs an `_id` to attach comments to), each
   showing the author's avatar/name and `timeAgo`. Comments post immediately
   on their own request — they don't wait for the modal's main Save.
+- **Dedicated ticket pages**: every ticket now has a real URL,
+  `/tickets/[key]` (`app/tickets/[key]/page.tsx`, a Server Component using
+  `getTicketByKey`/`notFound()`), rendering the same form/comments UI as the
+  modal via a new shared `TicketForm` component
+  (`app/components/TicketForm.tsx`, extracted from what used to be all of
+  `TicketModal.tsx` — `TicketModal` is now just the backdrop/header chrome
+  wrapping `TicketForm`). `ticket.key` is a real `<Link>` everywhere
+  (`TicketCard`, Planning rows, the List table), so ⌘/Ctrl-click opens a
+  ticket in a new tab. Clicking it normally instead gets an overlay, not a
+  full navigation: `app/@modal/(.)tickets/[key]/page.tsx` is a Next.js
+  intercepting route (`(.)` = "intercept from this level") rendered through
+  the `@modal` parallel-route slot declared in `app/layout.tsx`, styled with
+  the same `TicketModal` chrome, closing via `router.back()`. A hard refresh
+  or direct link visit on `/tickets/[key]` bypasses the interception and
+  renders the real full page instead. `app/@modal/default.tsx` (returning
+  `null`) is required by Next 16 for any unmatched parallel-route slot.
 
 ## Env vars
 - `MONGODB_URI`
