@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
 import { getTicketByKey, toTicketDTO } from "@/lib/tickets";
 import { getTeamWithAvatars } from "@/lib/team";
-import InterceptedTicketSidebar from "@/app/@modal/(.)tickets/[key]/InterceptedTicketSidebar";
+import InterceptedTicketModal from "@/app/@modal/(.)tickets/[key]/InterceptedTicketModal";
 
 export default async function InterceptedTicketPage({
   params,
@@ -16,5 +16,5 @@ export default async function InterceptedTicketPage({
 
   if (!ticket) notFound();
 
-  return <InterceptedTicketSidebar ticket={toTicketDTO(ticket)} team={team} />;
+  return <InterceptedTicketModal ticket={toTicketDTO(ticket)} team={team} />;
 }

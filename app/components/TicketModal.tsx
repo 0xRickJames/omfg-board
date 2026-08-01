@@ -27,9 +27,22 @@ export default function TicketModal({
           <h2 className="text-lg font-semibold">
             {mode === "create" ? "New ticket" : ticket!.key}
           </h2>
-          <button onClick={onClose} className="text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100">
-            ✕
-          </button>
+          <div className="flex items-center gap-3">
+            {mode === "edit" && (
+              <a
+                href={`/tickets/${ticket!.key}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-sm text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100"
+                title="Open as a standalone page"
+              >
+                Open full page ↗
+              </a>
+            )}
+            <button onClick={onClose} className="text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100">
+              ✕
+            </button>
+          </div>
         </div>
 
         <TicketForm ticket={ticket} team={team} onSaved={onSaved} onCancel={onClose} />

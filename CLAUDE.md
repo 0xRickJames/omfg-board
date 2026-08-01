@@ -243,30 +243,30 @@ Do NOT run this until Phases 1–3 exist and the schema is stable.
   (edit mode only — a ticket needs an `_id` to attach comments to), each
   showing the author's avatar/name and `timeAgo`. Comments post immediately
   on their own request — they don't wait for the modal's main Save.
-- **Dedicated ticket pages + sidebar (modal is create-only)**: every ticket
-  has a real URL, `/tickets/[key]` (`app/tickets/[key]/page.tsx`, a Server
-  Component using `getTicketByKey`/`notFound()`). The form/comments UI is
-  shared across every ticket surface via `TicketForm`
-  (`app/components/TicketForm.tsx`, extracted from what used to be all of
-  `TicketModal.tsx`). Clicking an existing ticket anywhere (Board, Backlog,
-  Planning, List) navigates to `/tickets/[key]` — normally that's
-  intercepted by `app/@modal/(.)tickets/[key]/page.tsx` (a Next.js
-  intercepting route rendered through the `@modal` parallel-route slot in
-  `app/layout.tsx`) and shown as a right-side slide-in `TicketSidebar`
-  (`app/components/TicketSidebar.tsx`) instead of a full navigation; closing
-  it is `router.back()`, saving does `router.refresh()` + `router.back()` so
-  the underlying list picks up the change via its existing
-  resync-from-fresh-props pattern. The sidebar has its own "Open full page ↗"
-  link (`target="_blank"`) for anyone who wants the standalone page
-  specifically. A hard refresh or direct link visit on `/tickets/[key]`
-  bypasses the interception and renders the real full page. `TicketModal`
-  (the original centered backdrop+header component) is now used *only* for
-  creating a new ticket (`NewTicketButton`, Backlog's own create button) —
-  editing an existing ticket never opens it anymore. `ticket.key` is still a
-  real `<Link>` on every row/card as a bonus affordance for power users, but
-  the row/card itself also navigates via `router.push` so the sidebar opens
-  no matter where on it you click. `app/@modal/default.tsx` (returning
-  `null`) is required by Next 16 for any unmatched parallel-route slot.
+- **Dedicated ticket pages**: every ticket has a real URL, `/tickets/[key]`
+  (`app/tickets/[key]/page.tsx`, a Server Component using
+  `getTicketByKey`/`notFound()`). The form/comments UI is shared across
+  every ticket surface via `TicketForm` (`app/components/TicketForm.tsx`,
+  extracted from what used to be all of `TicketModal.tsx`). Clicking an
+  existing ticket anywhere (Board, Backlog, Planning, List) navigates to
+  `/tickets/[key]` — normally that's intercepted by
+  `app/@modal/(.)tickets/[key]/page.tsx` (a Next.js intercepting route
+  rendered through the `@modal` parallel-route slot in `app/layout.tsx`)
+  and shown as the same centered `TicketModal` (backdrop dimmed, closes via
+  Cancel/✕ or a successful save, never on an outside click) instead of a
+  full navigation; closing it is `router.back()`, saving does
+  `router.refresh()` + `router.back()` so the underlying list picks up the
+  change via its existing resync-from-fresh-props pattern. The modal has an
+  "Open full page ↗" link (`target="_blank"`, edit mode only) for anyone
+  who wants the standalone page specifically. A hard refresh or direct link
+  visit on `/tickets/[key]` bypasses the interception and renders the real
+  full page. (A right-side slide-in sidebar was tried first instead of the
+  modal for viewing/editing existing tickets, then reverted — Rick preferred
+  the centered modal.) `ticket.key` is still a real `<Link>` on every
+  row/card as a bonus affordance for power users, but the row/card itself
+  also navigates via `router.push` so the modal opens no matter where on it
+  you click. `app/@modal/default.tsx` (returning `null`) is required by
+  Next 16 for any unmatched parallel-route slot.
 
 ## Env vars
 - `MONGODB_URI`
