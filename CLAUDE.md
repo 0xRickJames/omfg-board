@@ -284,16 +284,27 @@ Do NOT run this until Phases 1–3 exist and the schema is stable.
   computes it for the tickets it fetched and passes it down as a `progress`
   prop, rendered as a small bar+count (`app/components/SubtaskProgress.tsx`)
   on `TicketCard`, Planning's rows, and a dedicated List column.
-  `TicketForm.tsx` has a "Parent ticket" key input plus a Subtasks section
-  (edit mode only) that fetches `GET /api/tickets?parentKey=...` on mount and
-  lists each subtask with a link to its standalone page; "+ Add subtask"
-  opens a nested create `TicketModal` pre-filled with the current ticket's
-  key as `defaultParentKey` (TicketForm and TicketModal import each other —
-  a deliberate circular import, since TicketModal wraps TicketForm and
+  `TicketForm.tsx` has a "Parent ticket" dropdown (works identically in
+  create and edit mode, so re-parenting an existing ticket is just changing
+  this field and saving) plus a Subtasks section (edit mode only) that
+  fetches `GET /api/tickets?parentKey=...` on mount and lists each subtask
+  with a link to its standalone page; "+ Add subtask" opens a nested create
+  `TicketModal` pre-filled with the current ticket's key as
+  `defaultParentKey` (TicketForm and TicketModal import each other — a
+  deliberate circular import, since TicketModal wraps TicketForm and
   TicketForm needs TicketModal for this nested creator; Next.js/Turbopack
   handles it fine since neither uses the other at module-eval time, only
   inside render). No cascade behavior on delete — deleting a parent leaves
-  its subtasks with a dangling `parentKey`, same as `related`.
+  its subtasks with a dangling `parentKey`, same as `related`. The parent
+  dropdown is a real `<select>` (not free text), sourced from `GET
+  /api/tickets` and excluding the ticket itself and its own current
+  subtasks (cheap one-level cycle guard, not full ancestry cycle detection).
+  Options are ordered by "recently viewed" first — `lib/recentTickets.ts`
+  keeps a per-browser `localStorage` list (deliberately client-only/local,
+  not a shared DB field like `doneAt`, since "recently viewed by me" is
+  inherently per-viewer), recorded whenever `TicketForm` opens in edit mode;
+  everything else falls back to newest-key-first via `lib/format.ts`'s
+  `keyNumber()` (also used by `ListClient`'s key-column sort).
 - **Google Calendar out-of-office banner**: `TEAM_ROSTER` in `lib/team.ts`
   now carries each person's Workspace `googleEmail`. A single founder
   connects their own Google identity once via `/api/google/connect` (Nav has

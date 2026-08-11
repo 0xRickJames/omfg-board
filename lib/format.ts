@@ -1,5 +1,11 @@
 import type { TicketStatus } from "@/lib/models";
 
+/** Numeric portion of a ticket key ("OMFG-42" -> 42), for sorting by newest/oldest. */
+export function keyNumber(key: string): number {
+  const match = key.match(/(\d+)$/);
+  return match ? parseInt(match[1], 10) : 0;
+}
+
 const UNITS: [Intl.RelativeTimeFormatUnit, number][] = [
   ["year", 1000 * 60 * 60 * 24 * 365],
   ["month", 1000 * 60 * 60 * 24 * 30],

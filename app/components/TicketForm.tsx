@@ -1,10 +1,11 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import type { TicketDTO, CommentDTO } from "@/lib/tickets";
 import type { WorkType, TaskType, Priority, TicketStatus, TicketLink } from "@/lib/models";
 import type { TeamMember } from "@/lib/team";
-import { timeAgo } from "@/lib/format";
+import { timeAgo, keyNumber } from "@/lib/format";
+import { getRecentTicketKeys, recordTicketViewed } from "@/lib/recentTickets";
 import MemberAvatar from "@/app/components/MemberAvatar";
 import TicketModal from "@/app/components/TicketModal";
 
@@ -13,6 +14,11 @@ interface SubtaskSummary {
   key: string;
   title: string;
   status: TicketStatus;
+}
+
+interface TicketSummary {
+  key: string;
+  title: string;
 }
 
 const WORK_TYPES: WorkType[] = [
@@ -90,10 +96,16 @@ export default function TicketForm({
 
   const [subtasks, setSubtasks] = useState<SubtaskSummary[]>([]);
   const [addingSubtask, setAddingSubtask] = useState(false);
+  const [allTickets, setAllTickets] = useState<TicketSummary[]>([]);
 
   useEffect(() => {
-    if (mode !== "edit") return;
-    fetchSubtasks();
+    if (mode === "edit" && ticket) {
+      recordTicketViewed(ticket.key);
+      fetchSubtasks();
+    }
+    fetch("/api/tickets")
+      .then((res) => res.json())
+      .then(setAllTickets);
     // Only needs to run once per ticket the form was opened for.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -105,6 +117,22 @@ export default function TicketForm({
       setSubtasks(await res.json());
     }
   }
+
+  const parentOptions = useMemo(() => {
+    const excluded = new Set(subtasks.map((s) => s.key));
+    if (ticket) excluded.add(ticket.key);
+    const eligible = allTickets.filter((t) => !excluded.has(t.key));
+
+    const recentKeys = getRecentTicketKeys();
+    const recent = recentKeys
+      .map((key) => eligible.find((t) => t.key === key))
+      .filter((t): t is TicketSummary => Boolean(t));
+    const rest = eligible
+      .filter((t) => !recentKeys.includes(t.key))
+      .sort((a, b) => keyNumber(b.key) - keyNumber(a.key));
+
+    return [...recent, ...rest];
+  }, [allTickets, subtasks, ticket]);
 
   function updateLink(index: number, field: keyof TicketLink, value: string) {
     setLinks((prev) =>
@@ -409,14 +437,20 @@ export default function TicketForm({
 
         <div className="flex flex-col gap-1">
           <label className="text-xs font-medium text-zinc-500">
-            Parent ticket (key, optional — makes this a subtask)
+            Parent ticket (optional — makes this a subtask)
           </label>
-          <input
+          <select
             value={parentKeyText}
             onChange={(e) => setParentKeyText(e.target.value)}
-            placeholder="OMFG-12"
-            className="rounded border border-zinc-300 px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-800"
-          />
+            className="rounded border border-zinc-300 px-2 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-800"
+          >
+            <option value="">— None —</option>
+            {parentOptions.map((t) => (
+              <option key={t.key} value={t.key}>
+                {t.key} — {t.title}
+              </option>
+            ))}
+          </select>
         </div>
 
         <label className="flex items-center gap-2 text-sm">

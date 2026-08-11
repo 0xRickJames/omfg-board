@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import type { TicketDTO, SubtaskCounts } from "@/lib/tickets";
 import { STATUS_LABELS, type Priority } from "@/lib/models";
 import type { TeamMember } from "@/lib/team";
-import { timeAgo, dueInfo } from "@/lib/format";
+import { timeAgo, dueInfo, keyNumber } from "@/lib/format";
 import {
   ALL_TICKET_FILTERS,
   matchesTicketFilters,
@@ -44,11 +44,6 @@ const STATUS_RANK: Record<string, number> = {
   testing: 4,
   done: 5,
 };
-
-function keyNumber(key: string): number {
-  const match = key.match(/(\d+)$/);
-  return match ? parseInt(match[1], 10) : 0;
-}
 
 function compare(a: TicketDTO, b: TicketDTO, field: SortField): number {
   switch (field) {
