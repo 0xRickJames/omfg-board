@@ -3,17 +3,18 @@ import { getDb } from "@/lib/mongodb";
 import type { User } from "@/lib/models";
 
 export const TEAM_ROSTER = [
-  { discordId: "267142718856101889", name: "Rick" },
-  { discordId: "1353331899111837757", name: "Rakka" },
-  { discordId: "967378400257933312", name: "Haz" },
-  { discordId: "1237545047260528641", name: "Ivan" },
-  { discordId: "236508020341866497", name: "Zee" },
-  { discordId: "819925149393485835", name: "Olesia" },
+  { discordId: "267142718856101889", name: "Rick", googleEmail: "rick@omnipair.fi" },
+  { discordId: "1353331899111837757", name: "Rakka", googleEmail: "muhammed@omnipair.fi" },
+  { discordId: "967378400257933312", name: "Haz", googleEmail: "hazim@omnipair.fi" },
+  { discordId: "1237545047260528641", name: "Ivan", googleEmail: "ivan@omnipair.fi" },
+  { discordId: "236508020341866497", name: "Zee", googleEmail: "zee@omnipair.fi" },
+  { discordId: "819925149393485835", name: "Olesia", googleEmail: "olesia@omnipair.fi" },
 ] as const;
 
 export interface TeamMember {
   discordId: string;
   name: string;
+  googleEmail: string;
   avatar: string | null;
 }
 

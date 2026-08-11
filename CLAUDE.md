@@ -53,6 +53,11 @@ OMFGposite. Keep it lean. Resist scOMFGe creep.
 ### `users`
 - `_id`, `discordId`, `username`, `avatar`, `role` (`founder | planner | member`)
 
+### `integrations`
+- Single doc, `_id: "google-calendar"` — `{ refreshToken, connectedBy, connectedAt }`.
+  Whoever's Google identity is connected via `/api/google/connect` is the
+  lens every teammate's Out-of-Office status gets read through.
+
 ---
 
 ## Build order — commit after each phase
@@ -289,6 +294,27 @@ Do NOT run this until Phases 1–3 exist and the schema is stable.
   handles it fine since neither uses the other at module-eval time, only
   inside render). No cascade behavior on delete — deleting a parent leaves
   its subtasks with a dangling `parentKey`, same as `related`.
+- **Google Calendar out-of-office banner**: `TEAM_ROSTER` in `lib/team.ts`
+  now carries each person's Workspace `googleEmail`. A single founder
+  connects their own Google identity once via `/api/google/connect` (Nav has
+  a founder-only "Connect Google Calendar" link showing status) —
+  `app/api/google/connect/route.ts` redirects to Google's OAuth consent
+  screen (`calendar.readonly` scope, `prompt=consent` to force a
+  `refresh_token`, a CSRF `state` cookie), `app/api/google/callback/route.ts`
+  exchanges the code and stores the refresh token via
+  `lib/googleAuth.ts`/`integrations` collection. Deliberately a *separate*
+  path from `/api/auth/*` — that prefix is wholly owned by NextAuth's
+  `[...nextauth]` catch-all and would otherwise swallow/mishandle these
+  requests. `lib/googleCalendar.ts`'s `listCurrentOutOfOffice()` mints a
+  fresh access token from the stored refresh token per call (simplicity over
+  caching, at this traffic volume) and queries the Calendar API's
+  `events.list` with `eventTypes=outOfOffice` for each teammate's calendar —
+  this relies on the connected account already having calendar-sharing
+  visibility into the rest of the Workspace org (true here, per Rick).
+  Per-person fetch failures (e.g. a calendar not actually shared) are
+  swallowed via `Promise.allSettled` so one bad calendar doesn't blank the
+  whole banner. `app/components/OutOfOfficeBanner.tsx` renders above the
+  Board only (`app/page.tsx`) and renders nothing if nobody's currently out.
 
 ## Env vars
 - `MONGODB_URI`
@@ -299,9 +325,17 @@ Do NOT run this until Phases 1–3 exist and the schema is stable.
 - (Phase 5) `DISCORD_WEBHOOK_URL`
 - (Phase 6) `GITHUB_WEBHOOK_SECRET`
 - (Phase 7) `JIRA_API_TOKEN`, `JIRA_EMAIL` (for the one-time migration script)
+- `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` (out-of-office banner)
 
 ## Setup notes (human does these — Claude Code can't)
 - Create a Discord application: DevelOMFGer Portal → New Application → OAuth2 →
   add redirect `http://localhost:3000/api/auth/callback/discord`. Use the
   client ID/secret for the env vars.
+- Google Calendar: create a Cloud project → enable the Calendar API →
+  OAuth consent screen set to **Internal** (avoids review + the 7-day
+  refresh-token expiry unverified "External" apps get) → OAuth client
+  (Web application) with redirect URIs
+  `https://omfgboard.info/api/google/callback` and
+  `http://localhost:3000/api/google/callback`. Then, signed in as a
+  founder, visit `/api/google/connect` once.
 - Get it running locally with `npm run dev` before finishing each phase.
