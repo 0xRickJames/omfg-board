@@ -19,6 +19,7 @@ const VALID_WORK_TYPES: WorkType[] = [
   "Backend",
   "Research",
   "Ops",
+  "Blockchain",
   "none",
 ];
 const VALID_TASK_TYPES: TaskType[] = ["Idea", "Task", "Bug"];

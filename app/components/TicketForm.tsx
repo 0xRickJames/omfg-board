@@ -15,6 +15,7 @@ const WORK_TYPES: WorkType[] = [
   "Backend",
   "Research",
   "Ops",
+  "Blockchain",
   "none",
 ];
 const TASK_TYPES: TaskType[] = ["Idea", "Task", "Bug"];

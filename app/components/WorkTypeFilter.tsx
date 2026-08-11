@@ -10,6 +10,7 @@ const WORK_TYPES: WorkType[] = [
   "Backend",
   "Research",
   "Ops",
+  "Blockchain",
   "none",
 ];
 

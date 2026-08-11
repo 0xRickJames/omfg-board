@@ -8,6 +8,7 @@ export type WorkType =
   | "Backend"
   | "Research"
   | "Ops"
+  | "Blockchain"
   | "none";
 
 export type TaskType = "Idea" | "Task" | "Bug";

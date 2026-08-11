@@ -78,6 +78,14 @@ export default function TicketCard({
             {ticket.priority}
           </span>
         )}
+        {ticket.isPublic && (
+          <span
+            className="rounded bg-green-100 px-2 py-0.5 text-xs text-green-800 dark:bg-green-900 dark:text-green-200"
+            title="Visible to the public Discord channel"
+          >
+            Public
+          </span>
+        )}
         <span className="ml-auto text-xs text-zinc-400" title="Time since created">
           {timeAgo(ticket.createdAt)}
         </span>
