@@ -3,7 +3,7 @@
 import { useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import type { TicketDTO } from "@/lib/tickets";
+import type { TicketDTO, SubtaskCounts } from "@/lib/tickets";
 import { STATUS_LABELS, type TicketStatus, type Priority } from "@/lib/models";
 import type { TeamMember } from "@/lib/team";
 import { timeAgo, dueInfo } from "@/lib/format";
@@ -16,6 +16,7 @@ import {
 import TicketFilters from "@/app/components/TicketFilters";
 import MemberAvatar from "@/app/components/MemberAvatar";
 import NewTicketButton from "@/app/components/NewTicketButton";
+import SubtaskProgress from "@/app/components/SubtaskProgress";
 
 const PRIORITIES: Priority[] = ["none", "low", "med", "high", "urgent"];
 
@@ -31,10 +32,12 @@ export default function PlanningClient({
   initialBacklogTickets,
   initialBoardTickets,
   team,
+  progress,
 }: {
   initialBacklogTickets: TicketDTO[];
   initialBoardTickets: TicketDTO[];
   team: TeamMember[];
+  progress: Record<string, SubtaskCounts>;
 }) {
   const router = useRouter();
   const [backlogTickets, setBacklogTickets] = useState(initialBacklogTickets);
@@ -220,6 +223,12 @@ export default function PlanningClient({
                     >
                       {due.text}
                     </span>
+                  )}
+                  {progress[ticket.key] && (
+                    <SubtaskProgress
+                      done={progress[ticket.key].done}
+                      total={progress[ticket.key].total}
+                    />
                   )}
                 </div>
                 {expanded.has(ticket._id) && ticket.description.trim() && (

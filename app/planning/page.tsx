@@ -1,5 +1,5 @@
 import { auth } from "@/auth";
-import { listTickets, toTicketDTO } from "@/lib/tickets";
+import { listTickets, toTicketDTO, getSubtaskCounts } from "@/lib/tickets";
 import { getTeamWithAvatars } from "@/lib/team";
 import PlanningClient from "@/app/components/PlanningClient";
 
@@ -20,12 +20,17 @@ export default async function PlanningPage() {
   const boardTickets = allTickets
     .filter((t) => t.status !== "backlog" && t.status !== "done")
     .map(toTicketDTO);
+  const progress = await getSubtaskCounts([
+    ...backlogTickets.map((t) => t.key),
+    ...boardTickets.map((t) => t.key),
+  ]);
 
   return (
     <PlanningClient
       initialBacklogTickets={backlogTickets}
       initialBoardTickets={boardTickets}
       team={team}
+      progress={progress}
     />
   );
 }

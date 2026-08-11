@@ -19,7 +19,7 @@ import {
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import type { TicketDTO } from "@/lib/tickets";
+import type { TicketDTO, SubtaskCounts } from "@/lib/tickets";
 import type { TeamMember } from "@/lib/team";
 import {
   ALL_TICKET_FILTERS,
@@ -72,11 +72,13 @@ function SortableTicketCard({
   team,
   onDelete,
   onOpen,
+  progress,
 }: {
   ticket: TicketDTO;
   team: TeamMember[];
   onDelete: (id: string) => void;
   onOpen: (ticket: TicketDTO) => void;
+  progress?: SubtaskCounts;
 }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } =
     useSortable({ id: ticket._id });
@@ -94,6 +96,7 @@ function SortableTicketCard({
         team={team}
         onDelete={() => onDelete(ticket._id)}
         onOpen={() => onOpen(ticket)}
+        progress={progress}
       />
     </div>
   );
@@ -105,12 +108,14 @@ function Column({
   team,
   onDelete,
   onOpen,
+  progress,
 }: {
   status: BoardStatus;
   tickets: TicketDTO[];
   team: TeamMember[];
   onDelete: (id: string) => void;
   onOpen: (ticket: TicketDTO) => void;
+  progress: Record<string, SubtaskCounts>;
 }) {
   const { setNodeRef } = useDroppable({ id: status });
 
@@ -131,6 +136,7 @@ function Column({
               team={team}
               onDelete={onDelete}
               onOpen={onOpen}
+              progress={progress[ticket.key]}
             />
           ))}
         </SortableContext>
@@ -142,9 +148,11 @@ function Column({
 export default function BoardClient({
   initialTickets,
   team,
+  progress,
 }: {
   initialTickets: TicketDTO[];
   team: TeamMember[];
+  progress: Record<string, SubtaskCounts>;
 }) {
   const router = useRouter();
   const [columns, setColumns] = useState<Record<BoardStatus, TicketDTO[]>>(() =>
@@ -283,12 +291,18 @@ export default function BoardClient({
               team={team}
               onDelete={handleDelete}
               onOpen={openTicket}
+              progress={progress}
             />
           ))}
         </div>
         <DragOverlay>
           {activeTicket ? (
-            <TicketCard ticket={activeTicket} team={team} onDelete={() => {}} />
+            <TicketCard
+              ticket={activeTicket}
+              team={team}
+              onDelete={() => {}}
+              progress={progress[activeTicket.key]}
+            />
           ) : null}
         </DragOverlay>
       </DndContext>

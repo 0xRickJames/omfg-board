@@ -1,4 +1,4 @@
-import { listTickets, toTicketDTO } from "@/lib/tickets";
+import { listTickets, toTicketDTO, getSubtaskCounts } from "@/lib/tickets";
 import { getTeamWithAvatars } from "@/lib/team";
 import BacklogClient from "@/app/components/BacklogClient";
 
@@ -7,11 +7,13 @@ export default async function BacklogPage() {
     listTickets({ status: "backlog" }),
     getTeamWithAvatars(),
   ]);
+  const ticketDTOs = tickets.map(toTicketDTO);
+  const progress = await getSubtaskCounts(ticketDTOs.map((t) => t.key));
 
   return (
     <div className="mx-auto flex w-full max-w-3xl flex-1 flex-col gap-6 px-4 py-6 sm:px-6">
       <h1 className="text-xl font-semibold">Backlog</h1>
-      <BacklogClient initialTickets={tickets.map(toTicketDTO)} team={team} />
+      <BacklogClient initialTickets={ticketDTOs} team={team} progress={progress} />
     </div>
   );
 }

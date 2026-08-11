@@ -1,11 +1,19 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import type { TicketDTO, CommentDTO } from "@/lib/tickets";
 import type { WorkType, TaskType, Priority, TicketStatus, TicketLink } from "@/lib/models";
 import type { TeamMember } from "@/lib/team";
 import { timeAgo } from "@/lib/format";
 import MemberAvatar from "@/app/components/MemberAvatar";
+import TicketModal from "@/app/components/TicketModal";
+
+interface SubtaskSummary {
+  _id: string;
+  key: string;
+  title: string;
+  status: TicketStatus;
+}
 
 const WORK_TYPES: WorkType[] = [
   "BD",
@@ -46,11 +54,14 @@ export default function TicketForm({
   team,
   onSaved,
   onCancel,
+  defaultParentKey,
 }: {
   ticket: TicketDTO | null;
   team: TeamMember[];
   onSaved: (ticket: TicketDTO) => void;
   onCancel: () => void;
+  /** Pre-fills the parent field when opened via a parent ticket's "+ Add subtask". */
+  defaultParentKey?: string;
 }) {
   const mode = ticket ? "edit" : "create";
 
@@ -66,6 +77,9 @@ export default function TicketForm({
   const [dueDate, setDueDate] = useState(ticket?.dueDate ?? "");
   const [links, setLinks] = useState<TicketLink[]>(ticket?.links ?? []);
   const [relatedText, setRelatedText] = useState((ticket?.related ?? []).join(", "));
+  const [parentKeyText, setParentKeyText] = useState(
+    ticket?.parentKey ?? defaultParentKey ?? "",
+  );
   const [isPublic, setIsPublic] = useState(ticket?.isPublic ?? false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -73,6 +87,24 @@ export default function TicketForm({
   const [comments, setComments] = useState<CommentDTO[]>(ticket?.comments ?? []);
   const [commentText, setCommentText] = useState("");
   const [postingComment, setPostingComment] = useState(false);
+
+  const [subtasks, setSubtasks] = useState<SubtaskSummary[]>([]);
+  const [addingSubtask, setAddingSubtask] = useState(false);
+
+  useEffect(() => {
+    if (mode !== "edit") return;
+    fetchSubtasks();
+    // Only needs to run once per ticket the form was opened for.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  async function fetchSubtasks() {
+    if (!ticket) return;
+    const res = await fetch(`/api/tickets?parentKey=${encodeURIComponent(ticket.key)}`);
+    if (res.ok) {
+      setSubtasks(await res.json());
+    }
+  }
 
   function updateLink(index: number, field: keyof TicketLink, value: string) {
     setLinks((prev) =>
@@ -110,6 +142,7 @@ export default function TicketForm({
       dueDate: dueDate || null,
       links: links.filter((l) => l.label.trim() && l.url.trim()),
       related: parseList(relatedText).map((k) => k.toUpperCase()),
+      parentKey: parentKeyText.trim() ? parentKeyText.trim().toUpperCase() : null,
       isPublic,
     };
 
@@ -374,6 +407,18 @@ export default function TicketForm({
           />
         </div>
 
+        <div className="flex flex-col gap-1">
+          <label className="text-xs font-medium text-zinc-500">
+            Parent ticket (key, optional — makes this a subtask)
+          </label>
+          <input
+            value={parentKeyText}
+            onChange={(e) => setParentKeyText(e.target.value)}
+            placeholder="OMFG-12"
+            className="rounded border border-zinc-300 px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-800"
+          />
+        </div>
+
         <label className="flex items-center gap-2 text-sm">
           <input
             type="checkbox"
@@ -402,6 +447,71 @@ export default function TicketForm({
           </button>
         </div>
       </form>
+
+      {mode === "edit" && (
+        <div className="flex flex-col gap-2 border-t border-zinc-200 pt-4 dark:border-zinc-800">
+          <div className="flex items-center justify-between">
+            <label className="text-xs font-medium text-zinc-500">
+              Subtasks
+              {subtasks.length > 0 &&
+                ` · ${subtasks.filter((s) => s.status === "done").length}/${subtasks.length}`}
+            </label>
+            <button
+              type="button"
+              onClick={() => setAddingSubtask(true)}
+              className="text-xs text-zinc-500 underline hover:text-zinc-900 dark:hover:text-zinc-100"
+            >
+              + Add subtask
+            </button>
+          </div>
+          {subtasks.length > 0 && (
+            <div className="h-1.5 w-full overflow-hidden rounded-full bg-zinc-100 dark:bg-zinc-800">
+              <div
+                className="h-full rounded-full bg-zinc-900 dark:bg-zinc-50"
+                style={{
+                  width: `${
+                    (subtasks.filter((s) => s.status === "done").length / subtasks.length) * 100
+                  }%`,
+                }}
+              />
+            </div>
+          )}
+          {subtasks.length === 0 ? (
+            <p className="text-xs text-zinc-500">No subtasks yet.</p>
+          ) : (
+            <ul className="flex flex-col gap-1">
+              {subtasks.map((s) => (
+                <li key={s._id} className="flex items-center gap-2 text-sm">
+                  <span className={s.status === "done" ? "text-zinc-400 line-through" : ""}>
+                    {s.title}
+                  </span>
+                  <a
+                    href={`/tickets/${s.key}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="ml-auto shrink-0 font-mono text-xs text-zinc-500 hover:underline"
+                  >
+                    {s.key} ↗
+                  </a>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+      )}
+
+      {addingSubtask && ticket && (
+        <TicketModal
+          ticket={null}
+          team={team}
+          onClose={() => setAddingSubtask(false)}
+          onSaved={() => {
+            setAddingSubtask(false);
+            fetchSubtasks();
+          }}
+          defaultParentKey={ticket.key}
+        />
+      )}
 
       {mode === "edit" && (
         <div className="flex flex-col gap-2 border-t border-zinc-200 pt-4 dark:border-zinc-800">

@@ -31,6 +31,7 @@ export interface CreateTicketInput {
   dueDate?: string | null;
   links?: Ticket["links"];
   related?: string[];
+  parentKey?: string | null;
   isPublic?: boolean;
 }
 
@@ -57,6 +58,7 @@ export async function createTicket(
     dueDate: input.dueDate ?? null,
     links: input.links ?? [],
     related: input.related ?? [],
+    parentKey: input.parentKey ? input.parentKey.toUpperCase() : null,
     isPublic: input.isPublic ?? false,
     githubRef: null,
     comments: [],
@@ -74,6 +76,7 @@ export async function createTicket(
 export interface ListTicketsFilter {
   status?: TicketStatus;
   workType?: WorkType;
+  parentKey?: string;
 }
 
 export async function listTickets(
@@ -88,6 +91,38 @@ export async function getTicketByKey(key: string): Promise<Ticket | null> {
   const db = await getDb();
   const tickets = db.collection<Ticket>("tickets");
   return tickets.findOne({ key });
+}
+
+export interface SubtaskCounts {
+  done: number;
+  total: number;
+}
+
+/** Subtask done/total counts for each of the given parent ticket keys, keyed by that key. */
+export async function getSubtaskCounts(
+  parentKeys: string[],
+): Promise<Record<string, SubtaskCounts>> {
+  if (parentKeys.length === 0) return {};
+  const db = await getDb();
+  const tickets = db.collection<Ticket>("tickets");
+  const rows = await tickets
+    .aggregate<{ _id: string; total: number; done: number }>([
+      { $match: { parentKey: { $in: parentKeys } } },
+      {
+        $group: {
+          _id: "$parentKey",
+          total: { $sum: 1 },
+          done: { $sum: { $cond: [{ $eq: ["$status", "done"] }, 1, 0] } },
+        },
+      },
+    ])
+    .toArray();
+
+  const counts: Record<string, SubtaskCounts> = {};
+  for (const row of rows) {
+    counts[row._id] = { done: row.done, total: row.total };
+  }
+  return counts;
 }
 
 export interface MoveTicketInput {
@@ -186,6 +221,7 @@ export interface UpdateTicketInput {
   dueDate?: string | null;
   links?: Ticket["links"];
   related?: string[];
+  parentKey?: string | null;
   isPublic?: boolean;
 }
 
@@ -208,6 +244,9 @@ export function pickUpdateFields(body: Record<string, unknown>): UpdateTicketInp
   }
   if (Array.isArray(body.links)) updates.links = body.links as Ticket["links"];
   if (Array.isArray(body.related)) updates.related = body.related as string[];
+  if (body.parentKey === null || typeof body.parentKey === "string") {
+    updates.parentKey = body.parentKey ? (body.parentKey as string).toUpperCase() : null;
+  }
   if (typeof body.isPublic === "boolean") updates.isPublic = body.isPublic;
   return updates;
 }
@@ -252,8 +291,9 @@ export function toTicketDTO(t: Ticket): TicketDTO {
     _id: t._id!.toString(),
     createdAt: t.createdAt.toISOString(),
     updatedAt: t.updatedAt.toISOString(),
-    // Tickets seeded before comments existed won't have the field at all.
+    // Tickets seeded before comments/parentKey existed won't have the fields at all.
     comments: (t.comments ?? []).map((c) => ({ ...c, createdAt: c.createdAt.toISOString() })),
     doneAt: t.doneAt ? t.doneAt.toISOString() : null,
+    parentKey: t.parentKey ?? null,
   };
 }

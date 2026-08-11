@@ -1,8 +1,10 @@
 import Link from "next/link";
 import type { TicketDTO } from "@/lib/tickets";
+import type { SubtaskCounts } from "@/lib/tickets";
 import type { TeamMember } from "@/lib/team";
 import { timeAgo, dueInfo } from "@/lib/format";
 import MemberAvatar from "@/app/components/MemberAvatar";
+import SubtaskProgress from "@/app/components/SubtaskProgress";
 
 export default function TicketCard({
   ticket,
@@ -10,12 +12,14 @@ export default function TicketCard({
   onDelete,
   onOpen,
   actions,
+  progress,
 }: {
   ticket: TicketDTO;
   team: TeamMember[];
   onDelete: () => void;
   onOpen?: () => void;
   actions?: React.ReactNode;
+  progress?: SubtaskCounts;
 }) {
   const due = dueInfo(ticket.dueDate, ticket.status);
   const owners = ticket.owners
@@ -90,12 +94,17 @@ export default function TicketCard({
           {timeAgo(ticket.createdAt)}
         </span>
       </div>
-      {due && (
-        <span
-          className={`text-xs ${due.overdue ? "font-medium text-red-600 dark:text-red-400" : "text-zinc-400"}`}
-        >
-          {due.text}
-        </span>
+      {(due || progress) && (
+        <div className="flex items-center gap-2">
+          {due && (
+            <span
+              className={`text-xs ${due.overdue ? "font-medium text-red-600 dark:text-red-400" : "text-zinc-400"}`}
+            >
+              {due.text}
+            </span>
+          )}
+          {progress && <SubtaskProgress done={progress.done} total={progress.total} />}
+        </div>
       )}
       {ticket.links.length > 0 && (
         <div className="flex flex-wrap gap-2" onClick={(e) => e.stopPropagation()}>

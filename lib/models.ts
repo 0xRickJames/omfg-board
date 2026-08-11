@@ -64,6 +64,9 @@ export interface Ticket {
   dueDate: string | null;
   links: TicketLink[];
   related: string[];
+  /** Key of this ticket's parent, if it's a subtask (e.g. "OMFG-42") — like
+   *  `related`, a plain key reference with no relational integrity. */
+  parentKey: string | null;
   isPublic: boolean;
   githubRef: GithubRef | null;
   comments: Comment[];

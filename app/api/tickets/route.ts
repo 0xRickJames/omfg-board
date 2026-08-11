@@ -6,10 +6,12 @@ import type { TicketStatus, WorkType } from "@/lib/models";
 export async function GET(req: NextRequest) {
   const status = req.nextUrl.searchParams.get("status") as TicketStatus | null;
   const workType = req.nextUrl.searchParams.get("workType") as WorkType | null;
+  const parentKey = req.nextUrl.searchParams.get("parentKey");
 
   const tickets = await listTickets({
     ...(status ? { status } : {}),
     ...(workType ? { workType } : {}),
+    ...(parentKey ? { parentKey: parentKey.toUpperCase() } : {}),
   });
 
   return NextResponse.json(tickets);

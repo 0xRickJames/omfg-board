@@ -3,7 +3,7 @@
 import { useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import type { TicketDTO } from "@/lib/tickets";
+import type { TicketDTO, SubtaskCounts } from "@/lib/tickets";
 import { STATUS_LABELS, type Priority } from "@/lib/models";
 import type { TeamMember } from "@/lib/team";
 import { timeAgo, dueInfo } from "@/lib/format";
@@ -16,6 +16,7 @@ import {
 import TicketFilters from "@/app/components/TicketFilters";
 import MemberAvatar from "@/app/components/MemberAvatar";
 import NewTicketButton from "@/app/components/NewTicketButton";
+import SubtaskProgress from "@/app/components/SubtaskProgress";
 
 type SortField =
   | "key"
@@ -83,9 +84,11 @@ const COLUMNS: { field: SortField; label: string }[] = [
 export default function ListClient({
   initialTickets,
   team,
+  progress,
 }: {
   initialTickets: TicketDTO[];
   team: TeamMember[];
+  progress: Record<string, SubtaskCounts>;
 }) {
   const router = useRouter();
   const [tickets, setTickets] = useState(initialTickets);
@@ -156,6 +159,7 @@ export default function ListClient({
                 </th>
               ))}
               <th className="px-3 py-2">Owners</th>
+              <th className="px-3 py-2">Subtasks</th>
               <th className="px-3 py-2" />
             </tr>
           </thead>
@@ -203,6 +207,14 @@ export default function ListClient({
                         <MemberAvatar key={member.discordId} member={member} className="h-5 w-5 ring-2 ring-white dark:ring-zinc-900" />
                       ))}
                     </div>
+                  </td>
+                  <td className="px-3 py-2">
+                    {progress[ticket.key] && (
+                      <SubtaskProgress
+                        done={progress[ticket.key].done}
+                        total={progress[ticket.key].total}
+                      />
+                    )}
                   </td>
                   <td className="px-3 py-2">
                     <button

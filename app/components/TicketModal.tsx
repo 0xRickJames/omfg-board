@@ -9,11 +9,13 @@ export default function TicketModal({
   team,
   onClose,
   onSaved,
+  defaultParentKey,
 }: {
   ticket: TicketDTO | null;
   team: TeamMember[];
   onClose: () => void;
   onSaved: (ticket: TicketDTO) => void;
+  defaultParentKey?: string;
 }) {
   const mode = ticket ? "edit" : "create";
 
@@ -45,7 +47,13 @@ export default function TicketModal({
           </div>
         </div>
 
-        <TicketForm ticket={ticket} team={team} onSaved={onSaved} onCancel={onClose} />
+        <TicketForm
+          ticket={ticket}
+          team={team}
+          onSaved={onSaved}
+          onCancel={onClose}
+          defaultParentKey={defaultParentKey}
+        />
       </div>
     </div>
   );

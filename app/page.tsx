@@ -1,4 +1,4 @@
-import { listTickets, toTicketDTO } from "@/lib/tickets";
+import { listTickets, toTicketDTO, getSubtaskCounts } from "@/lib/tickets";
 import { getTeamWithAvatars } from "@/lib/team";
 import BoardClient from "@/app/components/BoardClient";
 
@@ -25,6 +25,7 @@ export default async function BoardPage() {
   const tickets = [...todo, ...blocked, ...inProgress, ...testing, ...recentlyDone].map(
     toTicketDTO,
   );
+  const progress = await getSubtaskCounts(tickets.map((t) => t.key));
 
-  return <BoardClient initialTickets={tickets} team={team} />;
+  return <BoardClient initialTickets={tickets} team={team} progress={progress} />;
 }

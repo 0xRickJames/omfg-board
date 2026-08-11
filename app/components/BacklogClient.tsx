@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import type { TicketDTO } from "@/lib/tickets";
+import type { TicketDTO, SubtaskCounts } from "@/lib/tickets";
 import type { TeamMember } from "@/lib/team";
 import {
   ALL_TICKET_FILTERS,
@@ -17,9 +17,11 @@ import TicketModal from "@/app/components/TicketModal";
 export default function BacklogClient({
   initialTickets,
   team,
+  progress,
 }: {
   initialTickets: TicketDTO[];
   team: TeamMember[];
+  progress: Record<string, SubtaskCounts>;
 }) {
   const router = useRouter();
   const [tickets, setTickets] = useState<TicketDTO[]>(initialTickets);
@@ -97,6 +99,7 @@ export default function BacklogClient({
               team={team}
               onDelete={() => handleDelete(ticket._id)}
               onOpen={() => openEdit(ticket)}
+              progress={progress[ticket.key]}
               actions={
                 <button
                   onClick={(e) => {

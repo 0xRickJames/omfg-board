@@ -43,6 +43,8 @@ OMFGposite. Keep it lean. Resist scOMFGe creep.
 - `dueDate` — ISO date or null
 - `links` — array of `{ label, url }` (plain stored links, NO preview fetching)
 - `related` — string[] (ticket keys)
+- `parentKey` — ticket key or null; a plain key reference (like `related`, no
+  relational integrity/cascade) that makes this ticket a subtask of another
 - `isPublic` — boolean, default false
 - `githubRef` — `{ repo, prNumber, branch }` or null
 - `order` — float (drag reordering within a column)
@@ -267,6 +269,26 @@ Do NOT run this until Phases 1–3 exist and the schema is stable.
   also navigates via `router.push` so the modal opens no matter where on it
   you click. `app/@modal/default.tsx` (returning `null`) is required by
   Next 16 for any unmatched parallel-route slot.
+- **Subtasks**: any ticket can have a `parentKey` pointing at another
+  ticket's key — subtasks are full independent tickets (their own key,
+  status, column, owners; they show up on the Board/Backlog/List/Planning
+  like anything else), not a nested checklist item. `lib/tickets.ts`'s
+  `getSubtaskCounts(parentKeys)` is a single aggregate query per page load
+  that returns `{done, total}` keyed by parent key; each page (`app/page.tsx`,
+  `app/backlog/page.tsx`, `app/planning/page.tsx`, `app/list/page.tsx`)
+  computes it for the tickets it fetched and passes it down as a `progress`
+  prop, rendered as a small bar+count (`app/components/SubtaskProgress.tsx`)
+  on `TicketCard`, Planning's rows, and a dedicated List column.
+  `TicketForm.tsx` has a "Parent ticket" key input plus a Subtasks section
+  (edit mode only) that fetches `GET /api/tickets?parentKey=...` on mount and
+  lists each subtask with a link to its standalone page; "+ Add subtask"
+  opens a nested create `TicketModal` pre-filled with the current ticket's
+  key as `defaultParentKey` (TicketForm and TicketModal import each other —
+  a deliberate circular import, since TicketModal wraps TicketForm and
+  TicketForm needs TicketModal for this nested creator; Next.js/Turbopack
+  handles it fine since neither uses the other at module-eval time, only
+  inside render). No cascade behavior on delete — deleting a parent leaves
+  its subtasks with a dangling `parentKey`, same as `related`.
 
 ## Env vars
 - `MONGODB_URI`
