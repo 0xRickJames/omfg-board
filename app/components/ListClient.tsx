@@ -2,17 +2,17 @@
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import type { TicketDTO, SubtaskCounts } from "@/lib/tickets";
 import { STATUS_LABELS, type Priority } from "@/lib/models";
 import type { TeamMember } from "@/lib/team";
 import { timeAgo, dueInfo, keyNumber } from "@/lib/format";
 import {
-  ALL_TICKET_FILTERS,
   matchesTicketFilters,
   collectLabels,
   type TicketFilterValues,
 } from "@/lib/ticketFilters";
+import { filtersFromSearchParams, filtersToSearchParams } from "@/lib/filterUrl";
 import TicketFilters from "@/app/components/TicketFilters";
 import MemberAvatar from "@/app/components/MemberAvatar";
 import NewTicketButton from "@/app/components/NewTicketButton";
@@ -86,11 +86,21 @@ export default function ListClient({
   progress: Record<string, SubtaskCounts>;
 }) {
   const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
   const [tickets, setTickets] = useState(initialTickets);
   const [prevInitialTickets, setPrevInitialTickets] = useState(initialTickets);
-  const [filters, setFilters] = useState<TicketFilterValues>(ALL_TICKET_FILTERS);
+  const [filters, setFilters] = useState<TicketFilterValues>(() =>
+    filtersFromSearchParams(searchParams),
+  );
   const [sortField, setSortField] = useState<SortField>("createdAt");
   const [sortDirection, setSortDirection] = useState<SortDirection>("desc");
+
+  function handleFiltersChange(next: TicketFilterValues) {
+    setFilters(next);
+    const qs = filtersToSearchParams(next).toString();
+    router.replace(qs ? `${pathname}?${qs}` : pathname, { scroll: false });
+  }
 
   // initialTickets comes from a fresh server fetch on every router.refresh()
   // (e.g. after creating a ticket) — resync local state when it changes.
@@ -131,7 +141,7 @@ export default function ListClient({
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <TicketFilters
           values={filters}
-          onChange={setFilters}
+          onChange={handleFiltersChange}
           team={team}
           labelOptions={labelOptions}
         />

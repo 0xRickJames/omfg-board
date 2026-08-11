@@ -2,17 +2,17 @@
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import type { TicketDTO, SubtaskCounts } from "@/lib/tickets";
 import { STATUS_LABELS, type TicketStatus, type Priority } from "@/lib/models";
 import type { TeamMember } from "@/lib/team";
 import { timeAgo, dueInfo } from "@/lib/format";
 import {
-  ALL_TICKET_FILTERS,
   matchesTicketFilters,
   collectLabels,
   type TicketFilterValues,
 } from "@/lib/ticketFilters";
+import { filtersFromSearchParams, filtersToSearchParams } from "@/lib/filterUrl";
 import TicketFilters from "@/app/components/TicketFilters";
 import MemberAvatar from "@/app/components/MemberAvatar";
 import NewTicketButton from "@/app/components/NewTicketButton";
@@ -40,12 +40,22 @@ export default function PlanningClient({
   progress: Record<string, SubtaskCounts>;
 }) {
   const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
   const [backlogTickets, setBacklogTickets] = useState(initialBacklogTickets);
   const [boardTickets, setBoardTickets] = useState(initialBoardTickets);
   const [prevInitialBacklog, setPrevInitialBacklog] = useState(initialBacklogTickets);
   const [prevInitialBoard, setPrevInitialBoard] = useState(initialBoardTickets);
-  const [filters, setFilters] = useState<TicketFilterValues>(ALL_TICKET_FILTERS);
+  const [filters, setFilters] = useState<TicketFilterValues>(() =>
+    filtersFromSearchParams(searchParams),
+  );
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
+
+  function handleFiltersChange(next: TicketFilterValues) {
+    setFilters(next);
+    const qs = filtersToSearchParams(next).toString();
+    router.replace(qs ? `${pathname}?${qs}` : pathname, { scroll: false });
+  }
 
   function openTicket(ticket: TicketDTO) {
     router.push(`/tickets/${ticket.key}`);
@@ -158,7 +168,7 @@ export default function PlanningClient({
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <TicketFilters
           values={filters}
-          onChange={setFilters}
+          onChange={handleFiltersChange}
           team={team}
           labelOptions={labelOptions}
         />

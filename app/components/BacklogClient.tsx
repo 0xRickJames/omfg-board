@@ -1,15 +1,15 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import type { TicketDTO, SubtaskCounts } from "@/lib/tickets";
 import type { TeamMember } from "@/lib/team";
 import {
-  ALL_TICKET_FILTERS,
   matchesTicketFilters,
   collectLabels,
   type TicketFilterValues,
 } from "@/lib/ticketFilters";
+import { filtersFromSearchParams, filtersToSearchParams } from "@/lib/filterUrl";
 import TicketCard from "@/app/components/TicketCard";
 import TicketFilters from "@/app/components/TicketFilters";
 import TicketModal from "@/app/components/TicketModal";
@@ -24,10 +24,20 @@ export default function BacklogClient({
   progress: Record<string, SubtaskCounts>;
 }) {
   const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
   const [tickets, setTickets] = useState<TicketDTO[]>(initialTickets);
   const [prevInitialTickets, setPrevInitialTickets] = useState(initialTickets);
-  const [filters, setFilters] = useState<TicketFilterValues>(ALL_TICKET_FILTERS);
+  const [filters, setFilters] = useState<TicketFilterValues>(() =>
+    filtersFromSearchParams(searchParams),
+  );
   const [modalOpen, setModalOpen] = useState(false);
+
+  function handleFiltersChange(next: TicketFilterValues) {
+    setFilters(next);
+    const qs = filtersToSearchParams(next).toString();
+    router.replace(qs ? `${pathname}?${qs}` : pathname, { scroll: false });
+  }
 
   // initialTickets comes from a fresh server fetch on every router.refresh()
   // (e.g. after creating a ticket) — resync local state when it changes.
@@ -80,7 +90,7 @@ export default function BacklogClient({
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <TicketFilters
           values={filters}
-          onChange={setFilters}
+          onChange={handleFiltersChange}
           team={team}
           labelOptions={labelOptions}
         />

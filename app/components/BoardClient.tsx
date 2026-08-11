@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import {
   DndContext,
   DragOverlay,
@@ -22,11 +22,11 @@ import { CSS } from "@dnd-kit/utilities";
 import type { TicketDTO, SubtaskCounts } from "@/lib/tickets";
 import type { TeamMember } from "@/lib/team";
 import {
-  ALL_TICKET_FILTERS,
   matchesTicketFilters,
   collectLabels,
   type TicketFilterValues,
 } from "@/lib/ticketFilters";
+import { filtersFromSearchParams, filtersToSearchParams } from "@/lib/filterUrl";
 import TicketCard from "@/app/components/TicketCard";
 import TicketFilters from "@/app/components/TicketFilters";
 import NewTicketButton from "@/app/components/NewTicketButton";
@@ -155,15 +155,25 @@ export default function BoardClient({
   progress: Record<string, SubtaskCounts>;
 }) {
   const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
   const [columns, setColumns] = useState<Record<BoardStatus, TicketDTO[]>>(() =>
     groupByColumn(initialTickets),
   );
   const [prevInitialTickets, setPrevInitialTickets] = useState(initialTickets);
-  const [filters, setFilters] = useState<TicketFilterValues>(ALL_TICKET_FILTERS);
+  const [filters, setFilters] = useState<TicketFilterValues>(() =>
+    filtersFromSearchParams(searchParams),
+  );
   const [activeId, setActiveId] = useState<string | null>(null);
 
   function openTicket(ticket: TicketDTO) {
     router.push(`/tickets/${ticket.key}`);
+  }
+
+  function handleFiltersChange(next: TicketFilterValues) {
+    setFilters(next);
+    const qs = filtersToSearchParams(next).toString();
+    router.replace(qs ? `${pathname}?${qs}` : pathname, { scroll: false });
   }
 
   // initialTickets comes from a fresh server fetch on every router.refresh()
@@ -267,7 +277,7 @@ export default function BoardClient({
       <div className="flex flex-col gap-3 sm:grid sm:grid-cols-3 sm:items-center sm:gap-2">
         <TicketFilters
           values={filters}
-          onChange={setFilters}
+          onChange={handleFiltersChange}
           team={team}
           labelOptions={labelOptions}
         />

@@ -4,23 +4,26 @@ import type { WorkType, TaskType } from "@/lib/models";
 export interface TicketFilterValues {
   workType: WorkType | "all";
   taskType: TaskType | "all";
-  owner: string; // discordId, or "all"
+  owners: string[]; // discordIds; empty = no owner filter, otherwise OR-matched
   label: string; // label text, or "all"
+  publicOnly: boolean;
 }
 
 export const ALL_TICKET_FILTERS: TicketFilterValues = {
   workType: "all",
   taskType: "all",
-  owner: "all",
+  owners: [],
   label: "all",
+  publicOnly: false,
 };
 
 export function matchesTicketFilters(t: TicketDTO, f: TicketFilterValues): boolean {
   return (
     (f.workType === "all" || t.workType === f.workType) &&
     (f.taskType === "all" || t.taskType === f.taskType) &&
-    (f.owner === "all" || t.owners.includes(f.owner)) &&
-    (f.label === "all" || t.labels.includes(f.label))
+    (f.owners.length === 0 || t.owners.some((id) => f.owners.includes(id))) &&
+    (f.label === "all" || t.labels.includes(f.label)) &&
+    (!f.publicOnly || t.isPublic)
   );
 }
 

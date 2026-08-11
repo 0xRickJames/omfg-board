@@ -326,6 +326,22 @@ Do NOT run this until Phases 1–3 exist and the schema is stable.
   swallowed via `Promise.allSettled` so one bad calendar doesn't blank the
   whole banner. `app/components/OutOfOfficeBanner.tsx` renders above the
   Board only (`app/page.tsx`) and renders nothing if nobody's currently out.
+- **Multi-owner + public-only filters, shareable via URL**: `TicketFilterValues`
+  (`lib/ticketFilters.ts`) changed from a single `owner: string` to
+  `owners: string[]` (OR-matched — a ticket passes if it has *any* selected
+  owner) and gained `publicOnly: boolean`. The owner `<select>` in
+  `TicketFilters.tsx` became `app/components/OwnerFilter.tsx`, a
+  checkbox popover (outside-click-to-close) so multiple owners can be
+  toggled without the dropdown closing after each pick. Filter state now
+  round-trips through the URL query string on Board/Backlog/Planning/List
+  alike — `lib/filterUrl.ts`'s `filtersFromSearchParams`/`filtersToSearchParams`
+  read the initial `useState` from `useSearchParams()` and every `onChange`
+  does a `router.replace(..., { scroll: false })` with the new query string,
+  omitting anything at its default so an unfiltered view keeps a clean URL
+  with no query string at all. This makes a filtered view (e.g. one owner,
+  public-only) a plain copy-pasteable link — e.g. `/?owners=<discordId>`.
+  No Suspense-boundary wrapping needed since these routes are already fully
+  dynamic (session-gated), not statically rendered.
 
 ## Env vars
 - `MONGODB_URI`
