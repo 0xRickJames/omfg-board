@@ -5,6 +5,7 @@ import type { TeamMember } from "@/lib/team";
 import { ALL_TICKET_FILTERS, type TicketFilterValues } from "@/lib/ticketFilters";
 import WorkTypeFilter from "@/app/components/WorkTypeFilter";
 import OwnerFilter from "@/app/components/OwnerFilter";
+import TicketSearchInput from "@/app/components/TicketSearchInput";
 
 const TASK_TYPES: TaskType[] = ["Idea", "Task", "Bug"];
 
@@ -27,10 +28,15 @@ export default function TicketFilters({
     values.taskType !== "all" ||
     values.owners.length > 0 ||
     values.label !== "all" ||
-    values.publicOnly;
+    values.publicOnly ||
+    values.search.trim() !== "";
 
   return (
     <div className="flex flex-wrap gap-2">
+      <TicketSearchInput
+        value={values.search}
+        onChange={(search) => onChange({ ...values, search })}
+      />
       <WorkTypeFilter
         value={values.workType}
         onChange={(workType) => onChange({ ...values, workType })}

@@ -7,6 +7,7 @@ export interface TicketFilterValues {
   owners: string[]; // discordIds; empty = no owner filter, otherwise OR-matched
   label: string; // label text, or "all"
   publicOnly: boolean;
+  search: string; // matches against key + title, case-insensitive
 }
 
 export const ALL_TICKET_FILTERS: TicketFilterValues = {
@@ -15,15 +16,20 @@ export const ALL_TICKET_FILTERS: TicketFilterValues = {
   owners: [],
   label: "all",
   publicOnly: false,
+  search: "",
 };
 
 export function matchesTicketFilters(t: TicketDTO, f: TicketFilterValues): boolean {
+  const query = f.search.trim().toLowerCase();
   return (
     (f.workType === "all" || t.workType === f.workType) &&
     (f.taskType === "all" || t.taskType === f.taskType) &&
     (f.owners.length === 0 || t.owners.some((id) => f.owners.includes(id))) &&
     (f.label === "all" || t.labels.includes(f.label)) &&
-    (!f.publicOnly || t.isPublic)
+    (!f.publicOnly || t.isPublic) &&
+    (query === "" ||
+      t.key.toLowerCase().includes(query) ||
+      t.title.toLowerCase().includes(query))
   );
 }
 

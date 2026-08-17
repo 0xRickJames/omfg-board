@@ -13,6 +13,7 @@ export function filtersFromSearchParams(
     owners: owners ? owners.split(",").filter(Boolean) : [],
     label: params.get("label") ?? ALL_TICKET_FILTERS.label,
     publicOnly: params.get("publicOnly") === "1",
+    search: params.get("q") ?? ALL_TICKET_FILTERS.search,
   };
 }
 
@@ -25,5 +26,6 @@ export function filtersToSearchParams(filters: TicketFilterValues): URLSearchPar
   if (filters.owners.length > 0) params.set("owners", filters.owners.join(","));
   if (filters.label !== "all") params.set("label", filters.label);
   if (filters.publicOnly) params.set("publicOnly", "1");
+  if (filters.search.trim()) params.set("q", filters.search.trim());
   return params;
 }

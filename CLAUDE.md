@@ -342,6 +342,15 @@ Do NOT run this until Phases 1–3 exist and the schema is stable.
   public-only) a plain copy-pasteable link — e.g. `/?owners=<discordId>`.
   No Suspense-boundary wrapping needed since these routes are already fully
   dynamic (session-gated), not statically rendered.
+- **Search bar**: `TicketFilterValues.search` (case-insensitive substring
+  match against `key` + `title`, in `matchesTicketFilters`) round-trips
+  through the URL as `?q=...` alongside the other filters.
+  `app/components/TicketSearchInput.tsx` debounces 300ms before calling
+  `onChange` (and therefore before touching the URL/router) — it keeps its
+  own local `text` state for zero-latency typing and resyncs from the
+  `value` prop (render-time "adjust state" pattern, same as the
+  resync-from-fresh-props state elsewhere) whenever it changes externally
+  (URL back/forward nav, "Clear filters").
 
 ## Env vars
 - `MONGODB_URI`
