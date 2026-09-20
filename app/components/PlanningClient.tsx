@@ -211,7 +211,7 @@ export default function PlanningClient({
                       ))}
                     </div>
                   )}
-                  <span className="flex-1 truncate">{ticket.title}</span>
+                  <span className="min-w-0 flex-1 break-words">{ticket.title}</span>
                   {ticket.description.trim() && (
                     <button
                       onClick={(e) => {
@@ -353,7 +353,7 @@ export default function PlanningClient({
                       ))}
                     </div>
                   )}
-                  <span className="flex-1 truncate">{ticket.title}</span>
+                  <span className="min-w-0 flex-1 break-words">{ticket.title}</span>
                   {ticket.description.trim() && (
                     <button
                       onClick={(e) => {
