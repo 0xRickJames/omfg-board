@@ -4,6 +4,12 @@ import SignOutButton from "@/app/components/SignOutButton";
 import ThemeToggle from "@/app/components/ThemeToggle";
 import { getGoogleConnectionStatus } from "@/lib/googleAuth";
 
+/** The team's unified calendar app (github.com/omnipair/omnipair-calendar) —
+ *  same URL as the fixed one that app links back to OMFGBoard with. Every
+ *  OMFGBoard account is internal (no partner-org concept here), so no
+ *  role gating needed, unlike the calendar app's own reverse link. */
+const CALENDAR_URL = "https://calendar.omnipair.fi";
+
 export default async function Nav({ session }: { session: Session | null }) {
   const isFounder = session?.user?.role === "founder";
   const { connected: googleConnected } = isFounder
@@ -28,6 +34,14 @@ export default async function Nav({ session }: { session: Session | null }) {
             Planning
           </Link>
         )}
+        <a
+          href={CALENDAR_URL}
+          target="_blank"
+          rel="noreferrer"
+          className="text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100"
+        >
+          Calendar ↗
+        </a>
       </nav>
       <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-zinc-500">
         {session?.user && (
