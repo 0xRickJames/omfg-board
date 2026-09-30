@@ -2,6 +2,11 @@ import { NextRequest, NextResponse } from "next/server";
 import { extractTicketKey, verifyGithubSignature } from "@/lib/github";
 import { getTicketByKey, moveTicket, setGithubRef } from "@/lib/tickets";
 
+interface CreatePayload {
+  ref: string;
+  ref_type: string; // "branch" | "tag"
+}
+
 interface PullRequestPayload {
   action: string;
   pull_request: {
@@ -25,8 +30,31 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "invalid signature" }, { status: 401 });
   }
 
-  if (req.headers.get("x-github-event") !== "pull_request") {
-    return NextResponse.json({ ok: true, skipped: "not a pull_request event" });
+  const event = req.headers.get("x-github-event");
+
+  // A new branch named after a ticket means work has started on it.
+  if (event === "create") {
+    const payload: CreatePayload = JSON.parse(rawBody);
+    if (payload.ref_type !== "branch") {
+      return NextResponse.json({ ok: true, skipped: "not a branch" });
+    }
+
+    const key = extractTicketKey(payload.ref);
+    if (!key) {
+      return NextResponse.json({ ok: true, skipped: "no ticket key found" });
+    }
+
+    const ticket = await getTicketByKey(key);
+    if (!ticket || !ticket._id) {
+      return NextResponse.json({ ok: true, skipped: `no ticket ${key}` });
+    }
+
+    await moveTicket(ticket._id.toString(), { status: "in_progress" });
+    return NextResponse.json({ ok: true, key, moved: "in_progress" });
+  }
+
+  if (event !== "pull_request") {
+    return NextResponse.json({ ok: true, skipped: `event ${event} not handled` });
   }
 
   const payload: PullRequestPayload = JSON.parse(rawBody);
@@ -44,16 +72,18 @@ export async function POST(req: NextRequest) {
 
   const githubRef = { repo: repository.full_name, prNumber: pr.number, branch: pr.head.ref };
 
+  // Opening the PR means it's ready for review/QA — Testing, not In Progress
+  // (a branch existing already covered that transition).
   if (action === "opened") {
-    await moveTicket(ticket._id.toString(), { status: "in_progress" });
-    await setGithubRef(ticket._id.toString(), githubRef);
-    return NextResponse.json({ ok: true, key, moved: "in_progress" });
-  }
-
-  if (action === "closed" && pr.merged) {
     await moveTicket(ticket._id.toString(), { status: "testing" });
     await setGithubRef(ticket._id.toString(), githubRef);
     return NextResponse.json({ ok: true, key, moved: "testing" });
+  }
+
+  if (action === "closed" && pr.merged) {
+    await moveTicket(ticket._id.toString(), { status: "done" });
+    await setGithubRef(ticket._id.toString(), githubRef);
+    return NextResponse.json({ ok: true, key, moved: "done" });
   }
 
   return NextResponse.json({ ok: true, skipped: `action ${action} not handled` });

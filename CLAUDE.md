@@ -124,13 +124,22 @@ No bot needed — just the webhook.
 ### Phase 6 — GitHub auto-move (convention-based) (DONE)
 `POST /api/webhooks/github` — verifies GitHub's `X-Hub-Signature-256` HMAC
 against `GITHUB_WEBHOOK_SECRET` (timing-safe compare over the raw body),
-then reads the `OMFG-###` key out of the PR title or branch name
-(`lib/github.ts`):
-- PR opened → move ticket to In Progress
-- PR merged → move ticket to Testing
-Populates `githubRef` on match. Genuinely no per-repo config — the route
-doesn't care which repo sent the event, so each (possibly private) repo
-just needs its own webhook pointed at this same URL with the same secret.
+then reads the `OMFG-###` key out of the event (`lib/github.ts`):
+- Branch created (`create` event, `ref_type: "branch"`) with the key in its
+  name → move ticket to In Progress. Checks the branch name only (no PR
+  exists yet at this point).
+- PR opened → move ticket to Testing (checks the PR title first, then its
+  branch name). Populates `githubRef`.
+- PR merged → move ticket to Done. Populates `githubRef`.
+Each repo's webhook needs **both** "Branch or tag creation" and "Pull
+requests" checked under "Let me select individual events" — the original
+Phase 6 setup only needed Pull requests, so any repo's webhook configured
+before this change needs the Branch-or-tag-creation event added too, or
+tickets will skip straight to Testing without ever showing In Progress.
+Genuinely no per-repo config beyond that — the route doesn't care which
+repo sent the event, so each (possibly private) repo just needs its own
+webhook pointed at this same URL with the same secret and those two event
+types checked.
 `proxy.ts`'s matcher excludes `api/webhooks/*` since these requests carry
 no session, only their own signature.
 
