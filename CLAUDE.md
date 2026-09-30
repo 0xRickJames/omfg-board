@@ -143,6 +143,20 @@ types checked.
 `proxy.ts`'s matcher excludes `api/webhooks/*` since these requests carry
 no session, only their own signature.
 
+**Commit activity feed (separate from ticket auto-move, same endpoint)**:
+the same route also handles GitHub's `push` event — posts one Discord
+message per *distinct* pushed commit (`commit.distinct !== false`, so a
+branch's commits don't get re-announced when they land on `main` via
+merge) to `DISCORD_COMMITS_WEBHOOK_URL`
+(`lib/discord.ts`'s `notifyDiscordCommit`), showing the repo name, short
+commit hash, title, and description. Deliberately has nothing to do with
+tickets — no key lookup, no board movement, not gated on a ticket's
+`isPublic` flag (unlike `notifyDiscordStatusChange`) — it's a raw "things
+are happening" feed for anyone watching the channel, across every repo
+with a webhook pointed here. Needs `push` checked in addition to the two
+events above on any repo's webhook. Testing in a private channel first
+(per Rick) before moving it to a public one.
+
 ### Phase 7 — Jira migration (DONE, informally)
 The real board data was migrated directly — Rick exported the active Jira
 tickets and they were seeded straight into MongoDB (normalizing a few values
@@ -370,6 +384,7 @@ Do NOT run this until Phases 1–3 exist and the schema is stable.
 - (Phase 5) `DISCORD_WEBHOOK_URL`
 - (Phase 6) `GITHUB_WEBHOOK_SECRET`
 - (Phase 7) `JIRA_API_TOKEN`, `JIRA_EMAIL` (for the one-time migration script)
+- `DISCORD_COMMITS_WEBHOOK_URL` (commit activity feed, separate channel from `DISCORD_WEBHOOK_URL`)
 - `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` (out-of-office banner)
 
 ## Setup notes (human does these — Claude Code can't)

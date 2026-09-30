@@ -1,10 +1,22 @@
 import { NextRequest, NextResponse } from "next/server";
 import { extractTicketKey, verifyGithubSignature } from "@/lib/github";
 import { getTicketByKey, moveTicket, setGithubRef } from "@/lib/tickets";
+import { notifyDiscordCommit } from "@/lib/discord";
 
 interface CreatePayload {
   ref: string;
   ref_type: string; // "branch" | "tag"
+}
+
+interface PushPayload {
+  repository: { full_name: string };
+  commits: Array<{
+    id: string;
+    message: string;
+    url: string;
+    author: { name: string };
+    distinct: boolean;
+  }>;
 }
 
 interface PullRequestPayload {
@@ -51,6 +63,27 @@ export async function POST(req: NextRequest) {
 
     await moveTicket(ticket._id.toString(), { status: "in_progress" });
     return NextResponse.json({ ok: true, key, moved: "in_progress" });
+  }
+
+  // Raw commit activity feed — every distinct pushed commit, across every
+  // repo with a webhook pointed here, posted to one shared Discord channel.
+  // Not tied to tickets at all (no key lookup, no board movement).
+  if (event === "push") {
+    const payload: PushPayload = JSON.parse(rawBody);
+    const distinctCommits = payload.commits.filter((c) => c.distinct !== false);
+
+    await Promise.all(
+      distinctCommits.map((commit) =>
+        notifyDiscordCommit(payload.repository.full_name, {
+          id: commit.id,
+          message: commit.message,
+          url: commit.url,
+          authorName: commit.author.name,
+        }),
+      ),
+    );
+
+    return NextResponse.json({ ok: true, posted: distinctCommits.length });
   }
 
   if (event !== "pull_request") {
