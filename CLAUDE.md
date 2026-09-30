@@ -155,7 +155,15 @@ tickets — no key lookup, no board movement, not gated on a ticket's
 are happening" feed for anyone watching the channel, across every repo
 with a webhook pointed here. Needs `push` checked in addition to the two
 events above on any repo's webhook. Testing in a private channel first
-(per Rick) before moving it to a public one.
+(per Rick) before moving it to a public one. The shown author name tries
+to match GitHub's resolved `commit.author.username` against each team
+member's `githubUsernames` in `lib/team.ts`
+(`findTeamMemberByGithubUsername`) and shows their OMFGBoard name (e.g.
+"Rakka") instead of whatever's in their local git config; falls back to
+the raw `commit.author.name` for anyone unmatched (untracked contributors,
+or Olesia who has none listed). Note: `TEAM_ROSTER`'s `discordId` for Rick
+and Rakka looks like it'd be easy to mix up (they were given to me
+transposed once already) — Rick confirmed `267142718856101889` is him.
 
 ### Phase 7 — Jira migration (DONE, informally)
 The real board data was migrated directly — Rick exported the active Jira
