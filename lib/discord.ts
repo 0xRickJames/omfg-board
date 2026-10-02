@@ -47,12 +47,13 @@ export interface CommitInfo {
   id: string;
   message: string;
   url: string;
-  authorName: string;
 }
 
 /** Fire-and-forget: posts one message per pushed commit, across every repo
  *  with a webhook pointed here. Unlike notifyDiscordStatusChange, this is a
  *  raw activity feed — not tied to tickets or their public/private flag.
+ *  Deliberately title/repo/hash only (no description, no author) — opsec
+ *  call from Rakka to avoid dumping full commit detail into the channel.
  *  Never throws. */
 export async function notifyDiscordCommit(
   repoFullName: string,
@@ -62,16 +63,13 @@ export async function notifyDiscordCommit(
   if (!webhookUrl) return;
 
   const shortSha = commit.id.slice(0, 7);
-  const newlineIndex = commit.message.indexOf("\n");
-  const title = newlineIndex === -1 ? commit.message : commit.message.slice(0, newlineIndex);
-  const description = newlineIndex === -1 ? "" : commit.message.slice(newlineIndex + 1).trim();
+  const title = commit.message.split("\n")[0];
 
   const embed = {
     title: `${repoFullName} — ${shortSha}`,
     url: commit.url,
-    description: description ? `${title}\n\n${description}` : title,
+    description: title,
     color: COMMITS_EMBED_COLOR,
-    footer: { text: commit.authorName },
     timestamp: new Date().toISOString(),
   };
 

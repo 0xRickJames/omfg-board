@@ -131,15 +131,10 @@ then reads the `OMFG-###` key out of the event (`lib/github.ts`):
 - PR opened → move ticket to Testing (checks the PR title first, then its
   branch name). Populates `githubRef`.
 - PR merged → move ticket to Done. Populates `githubRef`.
-Each repo's webhook needs **both** "Branch or tag creation" and "Pull
-requests" checked under "Let me select individual events" — the original
-Phase 6 setup only needed Pull requests, so any repo's webhook configured
-before this change needs the Branch-or-tag-creation event added too, or
-tickets will skip straight to Testing without ever showing In Progress.
-Genuinely no per-repo config beyond that — the route doesn't care which
-repo sent the event, so each (possibly private) repo just needs its own
-webhook pointed at this same URL with the same secret and those two event
-types checked.
+Originally set up per-repo (each repo's own webhook needing "Branch or tag
+creation" + "Pull requests" checked) — since superseded by a single
+org-wide webhook, see below. Genuinely no per-repo config either way — the
+route doesn't care which repo sent the event.
 `proxy.ts`'s matcher excludes `api/webhooks/*` since these requests carry
 no session, only their own signature.
 
@@ -147,23 +142,25 @@ no session, only their own signature.
 the same route also handles GitHub's `push` event — posts one Discord
 message per *distinct* pushed commit (`commit.distinct !== false`, so a
 branch's commits don't get re-announced when they land on `main` via
-merge) to `DISCORD_COMMITS_WEBHOOK_URL`
-(`lib/discord.ts`'s `notifyDiscordCommit`), showing the repo name, short
-commit hash, title, and description. Deliberately has nothing to do with
-tickets — no key lookup, no board movement, not gated on a ticket's
-`isPublic` flag (unlike `notifyDiscordStatusChange`) — it's a raw "things
-are happening" feed for anyone watching the channel, across every repo
-with a webhook pointed here. Needs `push` checked in addition to the two
-events above on any repo's webhook. Testing in a private channel first
-(per Rick) before moving it to a public one. The shown author name tries
-to match GitHub's resolved `commit.author.username` against each team
-member's `githubUsernames` in `lib/team.ts`
-(`findTeamMemberByGithubUsername`) and shows their OMFGBoard name (e.g.
-"Rakka") instead of whatever's in their local git config; falls back to
-the raw `commit.author.name` for anyone unmatched (untracked contributors,
-or Olesia who has none listed). Note: `TEAM_ROSTER`'s `discordId` for Rick
-and Rakka looks like it'd be easy to mix up (they were given to me
-transposed once already) — Rick confirmed `267142718856101889` is him.
+merge) to `DISCORD_COMMITS_WEBHOOK_URL` (`lib/discord.ts`'s
+`notifyDiscordCommit`), showing **only** the repo name, short commit hash,
+and commit title (first line of the message) — deliberately no
+description/body and no author. Originally showed description + a
+matched-to-roster author name too, but Rakka called it an opsec risk
+(dumping full commit detail, including author identity, into a channel)
+and asked to cut it down to the bare minimum; an AI-summarized description
+was considered and rejected as unnecessary cost/complexity for what's
+meant to be a lightweight "things are happening" signal, not a detailed
+changelog. Deliberately has nothing to do with tickets — no key lookup,
+no board movement, not gated on a ticket's `isPublic` flag (unlike
+`notifyDiscordStatusChange`). The org now has a **single org-wide
+webhook** (Settings → Webhooks at the GitHub organization level, not
+per-repo) covering `push` + `pull_request` for every repo — individual
+per-repo webhooks on `dusk`/`dusk-webapp` were deleted to stop duplicate
+deliveries once the org-wide one existed. The org-wide webhook does *not*
+have "Branch or tag creation" checked, so the branch→In Progress step
+doesn't fire org-wide (per Rick, not a priority) — only PR-opened→Testing
+and merged→Done apply everywhere via the org webhook.
 
 ### Phase 7 — Jira migration (DONE, informally)
 The real board data was migrated directly — Rick exported the active Jira

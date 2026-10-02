@@ -41,15 +41,6 @@ export const TEAM_ROSTER = [
   },
 ] as const;
 
-/** Matches a GitHub username (case-insensitive) to a team member — used by
- *  the commit-activity Discord feed to show a real name instead of
- *  whatever's in someone's local git config. */
-export function findTeamMemberByGithubUsername(username: string | undefined | null) {
-  if (!username) return undefined;
-  const lower = username.toLowerCase();
-  return TEAM_ROSTER.find((m) => m.githubUsernames.some((u) => u.toLowerCase() === lower));
-}
-
 export interface TeamMember {
   discordId: string;
   name: string;

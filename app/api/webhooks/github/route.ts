@@ -2,7 +2,6 @@ import { NextRequest, NextResponse } from "next/server";
 import { extractTicketKey, verifyGithubSignature } from "@/lib/github";
 import { getTicketByKey, moveTicket, setGithubRef } from "@/lib/tickets";
 import { notifyDiscordCommit } from "@/lib/discord";
-import { findTeamMemberByGithubUsername } from "@/lib/team";
 
 interface CreatePayload {
   ref: string;
@@ -15,7 +14,6 @@ interface PushPayload {
     id: string;
     message: string;
     url: string;
-    author: { name: string; username?: string };
     distinct: boolean;
   }>;
 }
@@ -74,15 +72,13 @@ export async function POST(req: NextRequest) {
     const distinctCommits = payload.commits.filter((c) => c.distinct !== false);
 
     await Promise.all(
-      distinctCommits.map((commit) => {
-        const member = findTeamMemberByGithubUsername(commit.author.username);
-        return notifyDiscordCommit(payload.repository.full_name, {
+      distinctCommits.map((commit) =>
+        notifyDiscordCommit(payload.repository.full_name, {
           id: commit.id,
           message: commit.message,
           url: commit.url,
-          authorName: member?.name ?? commit.author.name,
-        });
-      }),
+        }),
+      ),
     );
 
     return NextResponse.json({ ok: true, posted: distinctCommits.length });
