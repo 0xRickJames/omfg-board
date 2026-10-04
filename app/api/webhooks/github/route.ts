@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { extractTicketKey, verifyGithubSignature } from "@/lib/github";
+import { extractTicketKey, isCommitFeedExcluded, verifyGithubSignature } from "@/lib/github";
 import { getTicketByKey, moveTicket, setGithubRef } from "@/lib/tickets";
 import { notifyDiscordCommit } from "@/lib/discord";
 
@@ -9,7 +9,7 @@ interface CreatePayload {
 }
 
 interface PushPayload {
-  repository: { full_name: string };
+  repository: { full_name: string; name: string };
   commits: Array<{
     id: string;
     message: string;
@@ -69,6 +69,9 @@ export async function POST(req: NextRequest) {
   // Not tied to tickets at all (no key lookup, no board movement).
   if (event === "push") {
     const payload: PushPayload = JSON.parse(rawBody);
+    if (isCommitFeedExcluded(payload.repository.name)) {
+      return NextResponse.json({ ok: true, skipped: "repo excluded from commit feed" });
+    }
     const distinctCommits = payload.commits.filter((c) => c.distinct !== false);
 
     await Promise.all(

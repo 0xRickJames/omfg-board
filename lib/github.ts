@@ -3,6 +3,13 @@ import { timingSafeEqual, createHmac } from "node:crypto";
 
 const KEY_PATTERN = /OMFG-\d+/i;
 
+// Repos (by bare name, case-insensitive) whose pushes never show in the Discord commit feed.
+const COMMIT_FEED_EXCLUDED_REPOS = ["veto"];
+
+export function isCommitFeedExcluded(repoName: string): boolean {
+  return COMMIT_FEED_EXCLUDED_REPOS.includes(repoName.toLowerCase());
+}
+
 /** Finds the first OMFG-### ticket key in a PR title or branch name, if any. */
 export function extractTicketKey(...sources: (string | null | undefined)[]): string | null {
   for (const source of sources) {
