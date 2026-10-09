@@ -9,6 +9,7 @@ interface CreatePayload {
 }
 
 interface PushPayload {
+  ref: string; // "refs/heads/<branch>"
   repository: { full_name: string; name: string };
   commits: Array<{
     id: string;
@@ -80,6 +81,7 @@ export async function POST(req: NextRequest) {
           id: commit.id,
           message: commit.message,
           url: commit.url,
+          branch: payload.ref.replace(/^refs\/heads\//, ""),
         }),
       ),
     );

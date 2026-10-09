@@ -47,6 +47,7 @@ export interface CommitInfo {
   id: string;
   message: string;
   url: string;
+  branch: string;
 }
 
 /** Fire-and-forget: posts one message per pushed commit, across every repo
@@ -66,7 +67,7 @@ export async function notifyDiscordCommit(
   const title = commit.message.split("\n")[0];
 
   const embed = {
-    title: `${repoFullName} — ${shortSha}`,
+    title: `${repoFullName} (${commit.branch}) — ${shortSha}`,
     url: commit.url,
     description: title,
     color: COMMITS_EMBED_COLOR,
