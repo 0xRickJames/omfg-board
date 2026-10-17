@@ -39,6 +39,12 @@ export const TEAM_ROSTER = [
     googleEmail: "olesia@omnipair.fi",
     githubUsernames: [],
   },
+  {
+    discordId: "186086001918214144",
+    name: "Soju",
+    googleEmail: "soju@omnipair.fi",
+    githubUsernames: [],
+  },
 ] as const;
 
 export interface TeamMember {
