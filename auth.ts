@@ -11,6 +11,9 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     Discord({
       clientId: process.env.DISCORD_CLIENT_ID,
       clientSecret: process.env.DISCORD_CLIENT_SECRET,
+      // Discord now returns `iss` on the callback (RFC 9207); without this
+      // Auth.js expects its placeholder issuer and rejects the login.
+      issuer: "https://discord.com",
     }),
   ],
   callbacks: {
